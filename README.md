@@ -152,6 +152,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `argocd_list_applications` | reader+ | List GitOps applications |
 | `argocd_get_application` | reader+ | Application sync/health status |
 | `argocd_get_app_history` | reader+ | Deployment revision history |
+| `argocd_list_app_events` | reader+ | Sync and deploy event timeline |
+| `argocd_get_app_resource_tree` | reader+ | Live resource tree for an app |
+| `argocd_list_projects` | reader+ | List ArgoCD projects |
+| `argocd_list_repositories` | reader+ | List connected Git repositories |
 | `argocd_sync_application` | admin | Trigger a sync |
 | `argocd_rollback_application` | admin | Roll back to a previous revision |
 
@@ -240,6 +244,10 @@ flowchart TB
         T_AL["argocd_list_apps"]
         T_AG["argocd_get_app"]
         T_AH["argocd_get_history"]
+        T_AE["argocd_list_app_events"]
+        T_ART["argocd_get_app_resource_tree"]
+        T_AP["argocd_list_projects"]
+        T_ARP["argocd_list_repositories"]
         T_AS["argocd_sync"]
         T_AR["argocd_rollback"]
       end

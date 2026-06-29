@@ -623,6 +623,10 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `argocd_list_applications` | reader+ | argocd | List GitOps applications |
 | `argocd_get_application` | reader+ | argocd | Get application sync/health |
 | `argocd_get_app_history` | reader+ | argocd | List deployment history |
+| `argocd_list_app_events` | reader+ | argocd | List sync and deploy events |
+| `argocd_get_app_resource_tree` | reader+ | argocd | Fetch application resource tree |
+| `argocd_list_projects` | reader+ | argocd | List ArgoCD projects |
+| `argocd_list_repositories` | reader+ | argocd | List connected Git repositories |
 | `argocd_sync_application` | admin | argocd | Trigger application sync |
 | `argocd_rollback_application` | admin | argocd | Rollback to prior revision |
 

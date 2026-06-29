@@ -121,6 +121,10 @@ export const MCP_TOOLS: McpToolEntry[] = [
   { name: "argocd_list_applications", role: "reader+", description: "List ArgoCD applications" },
   { name: "argocd_get_application", role: "reader+", description: "Get ArgoCD application status" },
   { name: "argocd_get_app_history", role: "reader+", description: "List deployment history for an app" },
+  { name: "argocd_list_app_events", role: "reader+", description: "List sync and deploy events for an app" },
+  { name: "argocd_get_app_resource_tree", role: "reader+", description: "Fetch application resource tree" },
+  { name: "argocd_list_projects", role: "reader+", description: "List ArgoCD projects" },
+  { name: "argocd_list_repositories", role: "reader+", description: "List connected Git repositories" },
   { name: "argocd_sync_application", role: "admin", description: "Trigger an ArgoCD sync" },
   { name: "argocd_rollback_application", role: "admin", description: "Rollback an ArgoCD application" },
 ];

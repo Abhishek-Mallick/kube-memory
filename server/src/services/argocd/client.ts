@@ -86,6 +86,45 @@ export async function getApplicationHistory(options: {
   return app.status?.history ?? [];
 }
 
+export async function listApplicationEvents(options: {
+  workspaceId: string;
+  name: string;
+}): Promise<unknown[]> {
+  const url = await argoUrl(
+    options.workspaceId,
+    `/api/v1/applications/${encodeURIComponent(options.name)}/events`,
+  );
+  const data = await connectorJson<{ items: unknown[] }>(options.workspaceId, "argocd", url);
+  return data.items ?? [];
+}
+
+export async function getApplicationResourceTree(options: {
+  workspaceId: string;
+  name: string;
+}): Promise<unknown> {
+  const url = await argoUrl(
+    options.workspaceId,
+    `/api/v1/applications/${encodeURIComponent(options.name)}/resource-tree`,
+  );
+  return connectorJson(options.workspaceId, "argocd", url);
+}
+
+export async function listProjects(options: {
+  workspaceId: string;
+}): Promise<unknown[]> {
+  const url = await argoUrl(options.workspaceId, "/api/v1/projects");
+  const data = await connectorJson<{ items: unknown[] }>(options.workspaceId, "argocd", url);
+  return data.items ?? [];
+}
+
+export async function listRepositories(options: {
+  workspaceId: string;
+}): Promise<unknown[]> {
+  const url = await argoUrl(options.workspaceId, "/api/v1/repositories");
+  const data = await connectorJson<{ items: unknown[] }>(options.workspaceId, "argocd", url);
+  return data.items ?? [];
+}
+
 export async function isArgoCDAvailable(workspaceId: string): Promise<boolean> {
   try {
     await requireConnector(workspaceId, "argocd");

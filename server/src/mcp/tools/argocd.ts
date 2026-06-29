@@ -9,8 +9,12 @@ import {
 import {
   getApplication,
   getApplicationHistory,
+  getApplicationResourceTree,
   isArgoCDAvailable,
+  listApplicationEvents,
   listApplications,
+  listProjects,
+  listRepositories,
   rollbackApplication,
   syncApplication,
 } from "../../services/argocd/client.js";
@@ -93,6 +97,100 @@ export function registerArgoCDTools(server: McpServer): void {
         const input = argocdGetApplicationInputSchema.parse(args);
         const history = await getApplicationHistory({ ...input, workspaceId });
         return textContent({ name: input.name, history });
+      } catch (err) {
+        return connectorError("argocd", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "argocd_list_app_events",
+    {
+      title: "ArgoCD Application Events",
+      description: "List sync and deploy events for an ArgoCD application (read-only). Requires ArgoCD connector.",
+      inputSchema: {
+        name: z.string(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isArgoCDAvailable(workspaceId))) {
+        return textContent({ error: "ArgoCD connector not configured. Connect ArgoCD in the dashboard." });
+      }
+      try {
+        const input = argocdGetApplicationInputSchema.parse(args);
+        const events = await listApplicationEvents({ ...input, workspaceId });
+        return textContent({ name: input.name, events });
+      } catch (err) {
+        return connectorError("argocd", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "argocd_get_app_resource_tree",
+    {
+      title: "ArgoCD Application Resource Tree",
+      description: "Fetch the live resource tree for an ArgoCD application (read-only). Requires ArgoCD connector.",
+      inputSchema: {
+        name: z.string(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isArgoCDAvailable(workspaceId))) {
+        return textContent({ error: "ArgoCD connector not configured. Connect ArgoCD in the dashboard." });
+      }
+      try {
+        const input = argocdGetApplicationInputSchema.parse(args);
+        const resourceTree = await getApplicationResourceTree({ ...input, workspaceId });
+        return textContent({ name: input.name, resourceTree });
+      } catch (err) {
+        return connectorError("argocd", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "argocd_list_projects",
+    {
+      title: "ArgoCD List Projects",
+      description: "List ArgoCD projects (read-only). Requires ArgoCD connector.",
+      inputSchema: {},
+    },
+    async () => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isArgoCDAvailable(workspaceId))) {
+        return textContent({ error: "ArgoCD connector not configured. Connect ArgoCD in the dashboard." });
+      }
+      try {
+        const projects = await listProjects({ workspaceId });
+        return textContent({ projects });
+      } catch (err) {
+        return connectorError("argocd", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "argocd_list_repositories",
+    {
+      title: "ArgoCD List Repositories",
+      description: "List Git repositories connected to ArgoCD (read-only). Requires ArgoCD connector.",
+      inputSchema: {},
+    },
+    async () => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isArgoCDAvailable(workspaceId))) {
+        return textContent({ error: "ArgoCD connector not configured. Connect ArgoCD in the dashboard." });
+      }
+      try {
+        const repositories = await listRepositories({ workspaceId });
+        return textContent({ repositories });
       } catch (err) {
         return connectorError("argocd", err);
       }
