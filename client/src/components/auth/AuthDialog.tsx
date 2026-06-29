@@ -13,6 +13,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PasswordField } from "@/components/auth/PasswordField";
 import {
   useLoginMutation,
   useRegisterMutation,
@@ -99,17 +100,14 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                       placeholder="you@company.com"
                     />
                   </Field>
-                  <Field>
-                    <FieldLabel htmlFor="login-password">Password</FieldLabel>
-                    <Input
-                      id="login-password"
-                      name="password"
-                      type="password"
-                      required
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                    />
-                  </Field>
+                  <PasswordField
+                    id="login-password"
+                    name="password"
+                    label="Password"
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                  />
                 </FieldGroup>
                 {error && tab === "login" && (
                   <Alert variant="destructive">
@@ -146,18 +144,15 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
                       placeholder="you@company.com"
                     />
                   </Field>
-                  <Field>
-                    <FieldLabel htmlFor="register-password">Password</FieldLabel>
-                    <Input
-                      id="register-password"
-                      name="password"
-                      type="password"
-                      required
-                      minLength={8}
-                      autoComplete="new-password"
-                      placeholder="At least 8 characters"
-                    />
-                  </Field>
+                  <PasswordField
+                    id="register-password"
+                    name="password"
+                    label="Password"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                  />
                 </FieldGroup>
                 {error && tab === "register" && (
                   <Alert variant="destructive">

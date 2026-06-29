@@ -3,6 +3,6 @@
 - [ ] update docs with the latest mcp tools we have
 - [ ] add toast messages in whole app wherever necc.
 - [ ] add more relevant tools in each connector
-- [ ] in signin and register , in passowrd add a toggle of eye open and close for pass
+- [x] in signin and register , in passowrd add a toggle of eye open and close for pass
 - [ ] add relevant server loggers
 - [ ] register mcp server to different registries (npx ..)
