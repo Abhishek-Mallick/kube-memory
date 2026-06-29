@@ -66,6 +66,21 @@ export async function connectorJson<T>(
   return (await res.json()) as T;
 }
 
+export async function connectorJsonIfOk<T>(
+  workspaceId: string,
+  type: ConnectorType,
+  url: string,
+  init?: RequestInit,
+): Promise<{ ok: true; data: T } | { ok: false; status: number; message: string }> {
+  const res = await connectorFetch(workspaceId, type, url, init);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return { ok: false, status: res.status, message: body.slice(0, 200) };
+  }
+  const data = (await res.json()) as T;
+  return { ok: true, data };
+}
+
 export function baseUrlFromConfig(config: Record<string, unknown>): string {
   return String(config.baseUrl ?? "").replace(/\/$/, "");
 }

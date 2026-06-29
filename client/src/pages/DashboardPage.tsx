@@ -9,11 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { ActiveConnectorsPanel } from "@/components/dashboard/ActiveConnectorsPanel";
 import { useSetupProgress } from "@/hooks/useSetupProgress";
 
 export function DashboardPage() {
-  const { isLoading, hasIntegration, configuredCount, keyCount, currentStep, complete } =
-    useSetupProgress();
+  const {
+    isLoading,
+    hasIntegration,
+    hasEnabledIntegration,
+    configuredCount,
+    enabledCount,
+    keyCount,
+    currentStep,
+    complete,
+  } = useSetupProgress();
 
   return (
     <div className="dashboard-main space-y-8">
@@ -21,6 +30,20 @@ export function DashboardPage() {
         title="Welcome back"
         description="Follow the setup path: connect an integration, create an API key, then paste the MCP config into your IDE."
       />
+
+      {!isLoading && hasIntegration && !hasEnabledIntegration && (
+        <Alert>
+          <AlertTitle>Enable an integration for MCP</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>
+              {configuredCount} integration(s) saved but none are enabled. MCP tools only use enabled connectors.
+            </span>
+            <Button asChild size="sm">
+              <Link to="/dashboard/integrations">Enable integration</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {!isLoading && !complete && (
         <Alert>
@@ -71,7 +94,9 @@ export function DashboardPage() {
               Integrations
             </p>
             <p className="stat-card-value mt-2">{configuredCount}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Connected apps</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {enabledCount} active for MCP
+            </p>
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               strokeWidth={2}
@@ -102,6 +127,8 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      <ActiveConnectorsPanel />
 
       <section className="space-y-4">
         <h2 className="font-heading text-sm font-medium">Quick links</h2>

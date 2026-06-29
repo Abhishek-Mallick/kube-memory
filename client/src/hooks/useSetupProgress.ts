@@ -11,7 +11,9 @@ export function useSetupProgress() {
     ? Object.values(connectorsData.connectors)
     : [];
   const configuredCount = connectors.filter((c) => c.configured).length;
+  const enabledCount = connectors.filter((c) => c.configured && c.enabled).length;
   const hasIntegration = configuredCount > 0;
+  const hasEnabledIntegration = enabledCount > 0;
   const keyCount = apiKeysData?.keys.length ?? 0;
   const hasApiKey = keyCount > 0;
 
@@ -48,8 +50,10 @@ export function useSetupProgress() {
   return {
     isLoading,
     hasIntegration,
+    hasEnabledIntegration,
     hasApiKey,
     configuredCount,
+    enabledCount,
     keyCount,
     currentStep,
     steps,

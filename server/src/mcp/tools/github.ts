@@ -107,8 +107,16 @@ export function registerGitHubTools(server: McpServer): void {
       }
       try {
         const input = githubListRecentCommitsInputSchema.parse(args);
-        const commits = await listRecentCommits({ ...input, workspaceId });
-        return textContent({ commits, count: commits.length });
+        const result = await listRecentCommits({ ...input, workspaceId });
+        return textContent({
+          commits: result.commits,
+          count: result.commits.length,
+          source: result.source,
+          note:
+            result.source === "repositories"
+              ? "Fetched via per-repo commits API (works with standard repo-scoped PATs). /user/events is unavailable for many fine-grained tokens."
+              : "Fetched via GitHub user events feed.",
+        });
       } catch (err) {
         return connectorError("github", err);
       }

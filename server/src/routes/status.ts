@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import { connectMongo, isMongoConfigured } from "../db/connection.js";
-import { Connector } from "../db/models/Connector.js";
+import { Connector, connectorTypes } from "../db/models/Connector.js";
 import { MemoryEventRecord } from "../db/models/MemoryEventRecord.js";
 import { isCogneeConfigured } from "../services/cognee/client.js";
 import { isKubernetesConfigured } from "../services/kubernetes/client.js";
@@ -11,14 +11,40 @@ export const statusRouter = Router();
 statusRouter.get("/status", authMiddleware, async (req, res, next) => {
   try {
     const workspace = req.kubeAuth!.workspace;
-    let connectorCount = 0;
     let memoryEventCount = 0;
+    const connectors: Record<
+      string,
+      { configured: boolean; enabled: boolean; healthStatus: string | null; mcpActive: boolean }
+    > = {};
+
+    for (const type of connectorTypes) {
+      connectors[type] = {
+        configured: false,
+        enabled: false,
+        healthStatus: null,
+        mcpActive: false,
+      };
+    }
 
     if (isMongoConfigured()) {
       await connectMongo();
-      connectorCount = await Connector.countDocuments({ workspaceId: workspace._id });
+      const docs = await Connector.find({ workspaceId: workspace._id }).lean();
       memoryEventCount = await MemoryEventRecord.countDocuments({ workspaceId: workspace._id });
+
+      for (const doc of docs) {
+        const configured = Boolean(doc.secretEncrypted);
+        const enabled = Boolean(doc.enabled && doc.secretEncrypted);
+        connectors[doc.type] = {
+          configured,
+          enabled,
+          healthStatus: doc.healthStatus ?? null,
+          mcpActive: enabled,
+        };
+      }
     }
+
+    const configuredCount = Object.values(connectors).filter((c) => c.configured).length;
+    const enabledCount = Object.values(connectors).filter((c) => c.mcpActive).length;
 
     res.json({
       workspace: {
@@ -32,8 +58,10 @@ statusRouter.get("/status", authMiddleware, async (req, res, next) => {
         kubernetes: isKubernetesConfigured(),
         mongo: isMongoConfigured(),
       },
+      connectors,
       stats: {
-        connectors: connectorCount,
+        connectorsConfigured: configuredCount,
+        connectorsEnabled: enabledCount,
         memoryEvents: memoryEventCount,
       },
     });

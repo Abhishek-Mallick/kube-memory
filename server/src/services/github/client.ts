@@ -1,4 +1,4 @@
-import { connectorJson, requireConnector } from "../connectors/connectorHttp.js";
+import { connectorJson, connectorJsonIfOk, requireConnector } from "../connectors/connectorHttp.js";
 
 interface GitHubUser {
   login: string;
@@ -156,47 +156,118 @@ export async function listRecentCommits(options: {
   owner?: string;
   repo?: string;
   perPage?: number;
-}): Promise<unknown[]> {
+}): Promise<{ commits: Array<Record<string, unknown>>; source: "events" | "repositories" }> {
   const limit = options.perPage ?? 30;
 
   if (options.repo) {
     const owner = await resolveOwner(options.workspaceId, options.owner);
-    return listCommits({
+    const commits = await listCommits({
       workspaceId: options.workspaceId,
       owner,
       repo: options.repo,
       perPage: limit,
     });
+    return {
+      source: "repositories",
+      commits: commits.map((commit) => ({
+        ...(commit as Record<string, unknown>),
+        repository: `${owner}/${options.repo}`,
+      })),
+    };
   }
 
-  const events = await connectorJson<GitHubPushEvent[]>(
+  const eventsResult = await connectorJsonIfOk<GitHubPushEvent[]>(
     options.workspaceId,
     "github",
-    `https://api.github.com/user/events?per_page=100`,
+    "https://api.github.com/user/events?per_page=100",
   );
 
-  const commits: Array<Record<string, unknown>> = [];
-  const ownerFilter = options.owner?.trim().toLowerCase();
+  if (eventsResult.ok) {
+    const commits: Array<Record<string, unknown>> = [];
+    const ownerFilter = options.owner?.trim().toLowerCase();
 
-  for (const event of events) {
-    if (event.type !== "PushEvent") continue;
+    for (const event of eventsResult.data) {
+      if (event.type !== "PushEvent") continue;
 
-    const repoFullName = event.repo?.name ?? "";
-    if (ownerFilter && !repoFullName.toLowerCase().startsWith(`${ownerFilter}/`)) {
-      continue;
+      const repoFullName = event.repo?.name ?? "";
+      if (ownerFilter && !repoFullName.toLowerCase().startsWith(`${ownerFilter}/`)) {
+        continue;
+      }
+
+      for (const commit of event.payload?.commits ?? []) {
+        commits.push({
+          ...commit,
+          repository: repoFullName,
+          pushedBy: event.actor?.login,
+        });
+        if (commits.length >= limit) {
+          return { commits, source: "events" };
+        }
+      }
     }
 
-    for (const commit of event.payload?.commits ?? []) {
-      commits.push({
-        ...commit,
-        repository: repoFullName,
-        pushedBy: event.actor?.login,
-      });
-      if (commits.length >= limit) return commits;
+    if (commits.length > 0) {
+      return { commits, source: "events" };
     }
   }
 
-  return commits;
+  return listRecentCommitsFromRepositories(options, limit);
+}
+
+async function listRecentCommitsFromRepositories(
+  options: { workspaceId: string; owner?: string; perPage?: number },
+  limit: number,
+): Promise<{ commits: Array<Record<string, unknown>>; source: "repositories" }> {
+  const repos = await listRepositories({
+    workspaceId: options.workspaceId,
+    owner: options.owner,
+    perPage: Math.min(limit, 15),
+    type: "all",
+  });
+
+  const dated: Array<{ commit: Record<string, unknown>; repository: string; date: string }> = [];
+
+  for (const repo of repos.slice(0, 10)) {
+    const fullName = String((repo as { full_name?: string }).full_name ?? "");
+    const slash = fullName.indexOf("/");
+    if (slash < 0) continue;
+
+    const owner = fullName.slice(0, slash);
+    const repoName = fullName.slice(slash + 1);
+
+    try {
+      const commits = await listCommits({
+        workspaceId: options.workspaceId,
+        owner,
+        repo: repoName,
+        perPage: Math.min(5, limit),
+      });
+
+      for (const commit of commits) {
+        const record = commit as {
+          commit?: { author?: { date?: string }; message?: string };
+          sha?: string;
+        };
+        dated.push({
+          commit: commit as Record<string, unknown>,
+          repository: fullName,
+          date: record.commit?.author?.date ?? "",
+        });
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  dated.sort((a, b) => b.date.localeCompare(a.date));
+
+  return {
+    source: "repositories",
+    commits: dated.slice(0, limit).map(({ commit, repository }) => ({
+      ...commit,
+      repository,
+    })),
+  };
 }
 
 export async function getPullRequest(options: {
