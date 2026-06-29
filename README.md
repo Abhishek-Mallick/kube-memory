@@ -140,6 +140,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `prometheus_query_range` | reader+ | PromQL range query over a time window |
 | `prometheus_list_alerts` | reader+ | List firing alerts |
 | `prometheus_list_targets` | reader+ | List scrape targets and health |
+| `prometheus_list_rules` | reader+ | List alerting and recording rules |
+| `prometheus_list_alertmanagers` | reader+ | List active Alertmanager endpoints |
+| `prometheus_list_labels` | reader+ | List metric label names |
+| `prometheus_list_label_values` | reader+ | List values for a metric label |
 
 ### ArgoCD
 
@@ -225,6 +229,10 @@ flowchart TB
         T_PQR["prometheus_query_range"]
         T_PA["prometheus_list_alerts"]
         T_PT["prometheus_list_targets"]
+        T_PR["prometheus_list_rules"]
+        T_PAM["prometheus_list_alertmanagers"]
+        T_PL["prometheus_list_labels"]
+        T_PLV["prometheus_list_label_values"]
       end
 
       subgraph Argo["ArgoCD connector"]

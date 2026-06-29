@@ -15,6 +15,7 @@ const navItems = [
   { title: "Overview", href: "/dashboard", exact: true },
   { title: "Integrations", href: "/dashboard/integrations" },
   { title: "API Keys", href: "/dashboard/api-keys" },
+  { title: "Docs", href: "/docs" },
 ];
 
 function isNavActive(pathname: string, href: string, exact?: boolean) {

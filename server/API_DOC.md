@@ -616,6 +616,10 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `prometheus_query_range` | reader+ | prometheus | PromQL range query |
 | `prometheus_list_alerts` | reader+ | prometheus | List firing alerts |
 | `prometheus_list_targets` | reader+ | prometheus | List scrape targets |
+| `prometheus_list_rules` | reader+ | prometheus | List alerting and recording rules |
+| `prometheus_list_alertmanagers` | reader+ | prometheus | List active Alertmanager endpoints |
+| `prometheus_list_labels` | reader+ | prometheus | List metric label names |
+| `prometheus_list_label_values` | reader+ | prometheus | List values for a metric label |
 | `argocd_list_applications` | reader+ | argocd | List GitOps applications |
 | `argocd_get_application` | reader+ | argocd | Get application sync/health |
 | `argocd_get_app_history` | reader+ | argocd | List deployment history |

@@ -104,7 +104,17 @@ const CONNECTORS: ConnectorMeta[] = [
     type: "prometheus",
     title: "Prometheus",
     description: "Run PromQL queries and inspect alerts and targets.",
-    tools: ["prometheus_query", "prometheus_query_range", "prometheus_list_alerts", "prometheus_list_targets"],
+    docsLink: "/docs?tab=connectors&connector=prometheus",
+    tools: [
+      "prometheus_query",
+      "prometheus_query_range",
+      "prometheus_list_alerts",
+      "prometheus_list_targets",
+      "prometheus_list_rules",
+      "prometheus_list_alertmanagers",
+      "prometheus_list_labels",
+      "prometheus_list_label_values",
+    ],
     fields: [
       { key: "baseUrl", label: "Base URL", type: "text", placeholder: "https://prometheus.example.com", required: true },
       { key: "secret", label: "Bearer token", type: "secret" },
@@ -338,7 +348,7 @@ export function ConnectorsPage() {
                 <p className="mt-2 font-mono text-[10px] leading-relaxed text-muted-foreground/80">
                   {meta.tools.length} MCP tool{meta.tools.length === 1 ? "" : "s"}
                 </p>
-                <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+                <div className="-mx-5 mt-4 flex items-center justify-between gap-3 border-t px-5 pt-4">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Switch
                       checked={summary?.enabled ?? false}

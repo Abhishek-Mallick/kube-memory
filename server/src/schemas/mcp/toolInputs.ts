@@ -140,6 +140,25 @@ export const prometheusQueryRangeInputSchema = z.object({
   step: z.string().default("60s"),
 });
 
+export const prometheusListRulesInputSchema = z.object({
+  type: z.enum(["alert", "record"]).optional(),
+  ruleName: z.array(z.string()).optional(),
+  ruleGroup: z.array(z.string()).optional(),
+});
+
+export const prometheusListLabelsInputSchema = z.object({
+  match: z.array(z.string()).optional(),
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
+export const prometheusListLabelValuesInputSchema = z.object({
+  labelName: z.string().min(1),
+  match: z.array(z.string()).optional(),
+  start: z.string().optional(),
+  end: z.string().optional(),
+});
+
 export const argocdGetApplicationInputSchema = z.object({
   name: z.string().min(1),
 });
