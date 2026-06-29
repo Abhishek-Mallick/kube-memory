@@ -31,7 +31,9 @@ export function createApp(): Express {
   const env = getEnv();
   const app = createMcpExpressApp({
     host: "0.0.0.0",
-    allowedHosts: ["localhost", "127.0.0.1", "[::1]"],
+    ...(process.env.VERCEL !== "1" && {
+      allowedHosts: ["localhost", "127.0.0.1", "[::1]"],
+    }),
     jsonLimit: "2mb",
   });
 
