@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
+import { MCP_SERVER_INSTRUCTIONS } from "./constants.js";
 import { registerMemoryTools } from "./tools/memory.js";
 import { registerKubernetesTools } from "./tools/kubernetes.js";
 import { registerGitHubTools } from "./tools/github.js";
@@ -6,13 +7,20 @@ import { registerSlackTools } from "./tools/slack.js";
 import { registerPagerDutyTools } from "./tools/pagerduty.js";
 import { registerPrometheusTools } from "./tools/prometheus.js";
 import { registerArgoCDTools } from "./tools/argocd.js";
+import { registerPlatformTools } from "./tools/platform.js";
 
 export function createMcpServer(): McpServer {
-  const server = new McpServer({
-    name: "kube-memory",
-    version: "0.0.1",
-  });
+  const server = new McpServer(
+    {
+      name: "kube-memory",
+      version: "0.1.0",
+    },
+    {
+      instructions: MCP_SERVER_INSTRUCTIONS,
+    },
+  );
 
+  registerPlatformTools(server);
   registerMemoryTools(server);
   registerKubernetesTools(server);
   registerGitHubTools(server);

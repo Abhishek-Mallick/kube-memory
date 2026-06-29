@@ -7,6 +7,7 @@ import {
 import { sessionAuthMiddleware, requireSessionAdmin } from "../middleware/sessionAuth.js";
 import { encryptSecret, isEncryptionConfigured } from "../utils/encryption.js";
 import { testConnector } from "../services/connectors/testConnector.js";
+import { invalidateConnectorCache } from "../services/connectors/connectorSecrets.js";
 
 export const connectorsRouter = Router();
 
@@ -77,6 +78,8 @@ connectorsRouter.put(
         { upsert: true, new: true },
       );
 
+      invalidateConnectorCache(workspaceId.toString(), type);
+
       res.json({
         type: connector!.type,
         enabled: connector!.enabled,
@@ -99,6 +102,7 @@ connectorsRouter.delete(
       const type = connectorTypeParamSchema.parse(req.params.type);
       const workspaceId = req.session!.workspace._id;
       await Connector.deleteOne({ workspaceId, type });
+      invalidateConnectorCache(workspaceId.toString(), type);
       res.json({ status: "ok" });
     } catch (error) {
       next(error);

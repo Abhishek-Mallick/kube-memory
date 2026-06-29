@@ -23,7 +23,7 @@ Store and retrieve DevOps episodes through semantic search powered by [Cognee](h
 
 ### MCP-native — one endpoint, every integration
 
-Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to a single Streamable HTTP endpoint. One `km_*` API key unlocks **25 tools** across memory and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
+Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to a single Streamable HTTP endpoint. One `km_*` API key unlocks **29 tools** across memory, platform status, and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
 
 ### Workspace dashboard
 
@@ -61,6 +61,7 @@ Tools are invoked via `POST /mcp` with your workspace API key. Availability depe
 
 | Tool | Access | Description |
 |------|--------|-------------|
+| `kube_memory_status` | reader+ | List enabled integrations and workspace hints |
 | `memory_remember` | admin | Store incident, deployment, or fix |
 | `memory_recall` | reader+ | Semantic search over past episodes |
 | `memory_forget` | admin | Remove stale or sensitive memory |
@@ -77,6 +78,9 @@ Tools are invoked via `POST /mcp` with your workspace API key. Availability depe
 
 | Tool | Access | Description |
 |------|--------|-------------|
+| `github_get_authenticated_user` | reader+ | PAT user identity |
+| `github_list_repositories` | reader+ | List repositories |
+| `github_list_recent_commits` | reader+ | Recent commits across account activity |
 | `github_list_issues` | reader+ | List issues for a repository |
 | `github_list_pull_requests` | reader+ | List pull requests |
 | `github_list_commits` | reader+ | List commits on a branch or path |

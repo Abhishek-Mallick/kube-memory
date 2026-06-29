@@ -21,6 +21,14 @@ declare global {
 }
 
 const API_KEY_PREFIX = "km_";
+const AUTH_CACHE_TTL_MS = 60_000;
+
+interface CachedAuth {
+  auth: AuthContext;
+  expiresAt: number;
+}
+
+const authCache = new Map<string, CachedAuth>();
 
 function hashApiKey(rawKey: string): string {
   const salt = requireApiKeySalt();
@@ -103,11 +111,24 @@ async function resolveDatabaseAuth(token: string): Promise<AuthContext | null> {
   return null;
 }
 
+async function resolveAuthUncached(token: string): Promise<AuthContext | null> {
+  return (await resolveDatabaseAuth(token)) ?? (await resolveBootstrapAuth(token));
+}
+
 export async function resolveAuth(token: string | null): Promise<AuthContext | null> {
   if (!token) return null;
 
+  const cached = authCache.get(token);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.auth;
+  }
+
   try {
-    return (await resolveDatabaseAuth(token)) ?? (await resolveBootstrapAuth(token));
+    const auth = await resolveAuthUncached(token);
+    if (auth && !auth.isBootstrap) {
+      authCache.set(token, { auth, expiresAt: Date.now() + AUTH_CACHE_TTL_MS });
+    }
+    return auth;
   } catch {
     return null;
   }

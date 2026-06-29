@@ -40,7 +40,7 @@ export const k8sGetEventsInputSchema = z.object({
 });
 
 export const githubListIssuesInputSchema = z.object({
-  owner: z.string().min(1),
+  owner: z.string().min(1).optional(),
   repo: z.string().min(1),
   state: z.enum(["open", "closed", "all"]).default("open"),
   labels: z.string().optional(),
@@ -48,14 +48,14 @@ export const githubListIssuesInputSchema = z.object({
 });
 
 export const githubListPullRequestsInputSchema = z.object({
-  owner: z.string().min(1),
+  owner: z.string().min(1).optional(),
   repo: z.string().min(1),
   state: z.enum(["open", "closed", "all"]).default("open"),
   perPage: z.number().int().min(1).max(100).default(30),
 });
 
 export const githubListCommitsInputSchema = z.object({
-  owner: z.string().min(1),
+  owner: z.string().min(1).optional(),
   repo: z.string().min(1),
   sha: z.string().optional(),
   path: z.string().optional(),
@@ -63,9 +63,21 @@ export const githubListCommitsInputSchema = z.object({
 });
 
 export const githubGetPullRequestInputSchema = z.object({
-  owner: z.string().min(1),
+  owner: z.string().min(1).optional(),
   repo: z.string().min(1),
   pullNumber: z.number().int().min(1),
+});
+
+export const githubListRepositoriesInputSchema = z.object({
+  owner: z.string().min(1).optional(),
+  type: z.enum(["all", "owner", "public", "private", "member"]).default("owner"),
+  perPage: z.number().int().min(1).max(100).default(30),
+});
+
+export const githubListRecentCommitsInputSchema = z.object({
+  owner: z.string().min(1).optional(),
+  repo: z.string().min(1).optional(),
+  perPage: z.number().int().min(1).max(100).default(30),
 });
 
 export const slackGetHistoryInputSchema = z.object({

@@ -59,8 +59,16 @@ const CONNECTORS: ConnectorMeta[] = [
   {
     type: "github",
     title: "GitHub",
-    description: "Query issues, PRs, and commits for incident context.",
-    tools: ["github_list_issues", "github_list_pull_requests", "github_list_commits", "github_get_pull_request"],
+    description: "Query issues, PRs, and commits via your dashboard PAT — agents must not use local git.",
+    tools: [
+      "github_get_authenticated_user",
+      "github_list_repositories",
+      "github_list_recent_commits",
+      "github_list_issues",
+      "github_list_pull_requests",
+      "github_list_commits",
+      "github_get_pull_request",
+    ],
     fields: [
       { key: "secret", label: "Personal access token", type: "secret", required: true },
       { key: "org", label: "Org or user scope", type: "text", placeholder: "my-org" },

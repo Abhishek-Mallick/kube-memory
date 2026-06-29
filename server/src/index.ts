@@ -20,6 +20,18 @@ import {
 } from "./middleware/auth.js";
 
 const mcpServer = createMcpServer();
+const mcpTransport = new NodeStreamableHTTPServerTransport({
+  sessionIdGenerator: undefined,
+});
+
+let mcpTransportReady: Promise<void> | null = null;
+
+function ensureMcpTransportReady(): Promise<void> {
+  if (!mcpTransportReady) {
+    mcpTransportReady = mcpServer.connect(mcpTransport);
+  }
+  return mcpTransportReady;
+}
 
 function extractBearerToken(req: Request): string | null {
   const header = req.headers.authorization;
@@ -63,13 +75,17 @@ export function createApp(): Express {
       return;
     }
 
-    await authStorage.run(auth, async () => {
-      const transport = new NodeStreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
+    try {
+      await ensureMcpTransportReady();
+      await authStorage.run(auth, async () => {
+        await mcpTransport.handleRequest(req, res, req.body);
       });
-      await mcpServer.connect(transport);
-      await transport.handleRequest(req, res, req.body);
-    });
+    } catch (error) {
+      if (!res.headersSent) {
+        const message = error instanceof Error ? error.message : "MCP request failed";
+        res.status(500).json({ error: message });
+      }
+    }
   });
 
   app.use(notFoundHandler);
