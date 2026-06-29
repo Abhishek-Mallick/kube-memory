@@ -86,11 +86,34 @@ export const slackListChannelsInputSchema = z.object({
 export const pagerdutyListIncidentsInputSchema = z.object({
   statuses: z.array(z.enum(["triggered", "acknowledged", "resolved"])).optional(),
   serviceIds: z.array(z.string()).optional(),
+  since: z.string().optional(),
+  until: z.string().optional(),
+  sortBy: z.string().optional(),
   limit: z.number().int().min(1).max(100).default(25),
 });
 
 export const pagerdutyGetIncidentInputSchema = z.object({
   incidentId: z.string().min(1),
+});
+
+export const pagerdutyGetIncidentLogEntriesInputSchema = z.object({
+  incidentId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(25),
+});
+
+export const pagerdutyListIncidentNotesInputSchema = z.object({
+  incidentId: z.string().min(1),
+  limit: z.number().int().min(1).max(100).default(25),
+});
+
+export const pagerdutyListOncallsInputSchema = z.object({
+  scheduleIds: z.array(z.string()).optional(),
+  userIds: z.array(z.string()).optional(),
+  limit: z.number().int().min(1).max(100).default(25),
+});
+
+export const pagerdutyListUsersInputSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(25),
 });
 
 export const prometheusQueryInputSchema = z.object({

@@ -45,7 +45,7 @@ export function SetupJourney() {
                 >
                   <span
                     className={cn(
-                      "flex size-5 items-center justify-center rounded-full text-[10px]",
+                      "flex size-4 -ml-[4.5px] items-center justify-center rounded-full text-[10px]",
                       step.done
                         ? "bg-[var(--color-success)] text-background"
                         : isCurrent
