@@ -94,9 +94,13 @@ Tools are invoked via `POST /mcp` with your workspace API key. Availability depe
 
 | Tool | Access | Description |
 |------|--------|-------------|
-| `pagerduty_list_incidents` | reader+ | List incidents by status/service |
+| `pagerduty_list_incidents` | reader+ | List incidents by status/service/time |
 | `pagerduty_get_incident` | reader+ | Fetch incident details |
 | `pagerduty_list_services` | reader+ | List services |
+| `pagerduty_get_incident_log_entries` | reader+ | Fetch incident timeline log entries |
+| `pagerduty_list_incident_notes` | reader+ | List notes on an incident |
+| `pagerduty_list_oncalls` | reader+ | List who is currently on call |
+| `pagerduty_list_users` | reader+ | List PagerDuty users |
 
 ### Prometheus
 
@@ -179,6 +183,10 @@ flowchart TB
         T_PDL["pagerduty_list_incidents"]
         T_PDG["pagerduty_get_incident"]
         T_PDS["pagerduty_list_services"]
+        T_PDLE["pagerduty_get_incident_log_entries"]
+        T_PDN["pagerduty_list_incident_notes"]
+        T_PDO["pagerduty_list_oncalls"]
+        T_PDU["pagerduty_list_users"]
       end
 
       subgraph Prom["Prometheus connector"]

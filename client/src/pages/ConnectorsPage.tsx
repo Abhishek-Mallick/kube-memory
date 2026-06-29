@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Plug01Icon } from "@hugeicons/core-free-icons";
+import { InformationCircleIcon, Plug01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +29,7 @@ import {
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ConnectorIcon } from "@/components/dashboard/ConnectorIcon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   type ConnectorType,
   useListConnectorsQuery,
@@ -42,6 +43,7 @@ interface ConnectorMeta {
   description: string;
   badge?: "core";
   tools: string[];
+  docsLink?: string;
   fields: Array<{ key: string; label: string; type: "text" | "textarea" | "secret"; placeholder?: string; required?: boolean }>;
 }
 
@@ -78,7 +80,16 @@ const CONNECTORS: ConnectorMeta[] = [
     type: "pagerduty",
     title: "PagerDuty",
     description: "List and inspect incidents for alert enrichment.",
-    tools: ["pagerduty_list_incidents", "pagerduty_get_incident", "pagerduty_list_services"],
+    docsLink: "/docs?tab=connectors&connector=pagerduty",
+    tools: [
+      "pagerduty_list_incidents",
+      "pagerduty_get_incident",
+      "pagerduty_list_services",
+      "pagerduty_get_incident_log_entries",
+      "pagerduty_list_incident_notes",
+      "pagerduty_list_oncalls",
+      "pagerduty_list_users",
+    ],
     fields: [{ key: "secret", label: "API key", type: "secret", required: true }],
   },
   {
@@ -124,6 +135,31 @@ function hasRequiredFields(meta: ConnectorMeta, config: Record<string, string>, 
     }
   }
   return true;
+}
+
+function ConnectorDocsLink({ meta }: { meta: ConnectorMeta }) {
+  if (!meta.docsLink) return null;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link to={meta.docsLink} aria-label={`How to connect ${meta.title}`}>
+              <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>How to connect {meta.title}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function ConnectorsPage() {
@@ -275,7 +311,10 @@ export function ConnectorsPage() {
                       <ConnectorIcon type={meta.type} className="size-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-heading text-base font-medium">{meta.title}</h3>
+                      <div className="flex items-center gap-1">
+                        <h3 className="font-heading text-base font-medium">{meta.title}</h3>
+                        <ConnectorDocsLink meta={meta} />
+                      </div>
                       {meta.badge === "core" && (
                         <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-accent-signal)]">
                           Start here
@@ -348,6 +387,7 @@ export function ConnectorsPage() {
                 <DialogTitle className="flex items-center gap-2">
                   {active ? <ConnectorIcon type={active.type} className="size-5" /> : null}
                   {active?.title}
+                  {active ? <ConnectorDocsLink meta={active} /> : null}
                 </DialogTitle>
                 <DialogDescription>
                   {isConfiguredActive
@@ -438,6 +478,7 @@ export function ConnectorsPage() {
                 <DialogTitle className="flex items-center gap-2">
                   {active ? <ConnectorIcon type={active.type} className="size-5" /> : null}
                   {active?.title} saved
+                  {active ? <ConnectorDocsLink meta={active} /> : null}
                 </DialogTitle>
                 <DialogDescription>
                   Credentials stored. Enable this integration when you want MCP tools to use it.

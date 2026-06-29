@@ -608,6 +608,10 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `pagerduty_list_incidents` | reader+ | pagerduty | List PagerDuty incidents |
 | `pagerduty_get_incident` | reader+ | pagerduty | Fetch incident details |
 | `pagerduty_list_services` | reader+ | pagerduty | List PagerDuty services |
+| `pagerduty_get_incident_log_entries` | reader+ | pagerduty | Fetch incident timeline log entries |
+| `pagerduty_list_incident_notes` | reader+ | pagerduty | List notes on a PagerDuty incident |
+| `pagerduty_list_oncalls` | reader+ | pagerduty | List who is currently on call |
+| `pagerduty_list_users` | reader+ | pagerduty | List PagerDuty users |
 | `prometheus_query` | reader+ | prometheus | PromQL instant query |
 | `prometheus_query_range` | reader+ | prometheus | PromQL range query |
 | `prometheus_list_alerts` | reader+ | prometheus | List firing alerts |

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import {
   Accordion,
@@ -124,8 +124,8 @@ const toolGroups: ToolGroup[] = [
     tools: [
       {
         name: "pagerduty_list_incidents",
-        description: "List incidents by status or service.",
-        params: "statuses[], serviceIds[], limit",
+        description: "List incidents by status, service, or time range.",
+        params: "statuses[], serviceIds[], since, until, sortBy, limit",
       },
       {
         name: "pagerduty_get_incident",
@@ -135,6 +135,26 @@ const toolGroups: ToolGroup[] = [
       {
         name: "pagerduty_list_services",
         description: "List services in the PagerDuty account.",
+        params: "limit",
+      },
+      {
+        name: "pagerduty_get_incident_log_entries",
+        description: "Fetch timeline log entries for an incident.",
+        params: "incidentId (required), limit",
+      },
+      {
+        name: "pagerduty_list_incident_notes",
+        description: "List notes on a PagerDuty incident.",
+        params: "incidentId (required), limit",
+      },
+      {
+        name: "pagerduty_list_oncalls",
+        description: "List who is currently on call.",
+        params: "scheduleIds[], userIds[], limit",
+      },
+      {
+        name: "pagerduty_list_users",
+        description: "List users in the PagerDuty account.",
         params: "limit",
       },
     ],
@@ -293,7 +313,7 @@ const connectorSetup = [
     type: "pagerduty" as const,
     title: "PagerDuty",
     credential: "REST API key",
-    tools: "pagerduty_list_incidents, pagerduty_get_incident, pagerduty_list_services",
+    tools: "pagerduty_list_incidents, pagerduty_get_incident, pagerduty_list_services, pagerduty_get_incident_log_entries, pagerduty_list_incident_notes, pagerduty_list_oncalls, pagerduty_list_users",
     priority: "Optional — on-call incident enrichment",
     webhook: false,
     steps: [
@@ -355,7 +375,29 @@ function mcpSnippet() {
   );
 }
 
+const DOC_TABS = ["setup", "connectors", "tools", "ide", "api"] as const;
+type DocTab = (typeof DOC_TABS)[number];
+
+const CONNECTOR_TYPES = connectorSetup.map((c) => c.type);
+
+function parseDocTab(value: string | null): DocTab {
+  if (value && DOC_TABS.includes(value as DocTab)) {
+    return value as DocTab;
+  }
+  return "setup";
+}
+
+function parseConnector(value: string | null): string | undefined {
+  if (value && CONNECTOR_TYPES.includes(value as (typeof CONNECTOR_TYPES)[number])) {
+    return value;
+  }
+  return undefined;
+}
+
 export function DocsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = parseDocTab(searchParams.get("tab"));
+  const activeConnector = parseConnector(searchParams.get("connector"));
   const [activeGroup, setActiveGroup] = useState(toolGroups[0].id);
   const [activeTool, setActiveTool] = useState(allTools[0].name);
   const group = toolGroups.find((g) => g.id === activeGroup) ?? toolGroups[0];
@@ -366,6 +408,31 @@ export function DocsPage() {
     setActiveGroup(id);
     const next = toolGroups.find((g) => g.id === id);
     if (next?.tools[0]) setActiveTool(next.tools[0].name);
+  }
+
+  function handleTabChange(value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value === "setup") {
+      next.delete("tab");
+      next.delete("connector");
+    } else {
+      next.set("tab", value);
+      if (value !== "connectors") {
+        next.delete("connector");
+      }
+    }
+    setSearchParams(next, { replace: true });
+  }
+
+  function handleConnectorAccordionChange(value: string) {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "connectors");
+    if (value) {
+      next.set("connector", value);
+    } else {
+      next.delete("connector");
+    }
+    setSearchParams(next, { replace: true });
   }
 
   return (
@@ -395,7 +462,7 @@ export function DocsPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="setup" className="mx-auto mt-12 max-w-4xl">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mx-auto mt-12 max-w-4xl">
           <TabsList className="mb-8 h-9 w-fit flex-wrap">
             <TabsTrigger value="setup">Getting started</TabsTrigger>
             <TabsTrigger value="connectors">Integrations</TabsTrigger>
@@ -461,7 +528,13 @@ export function DocsPage() {
               Configure under <strong className="font-medium text-foreground">Dashboard → Integrations</strong>. Workflow: fill credentials → Test connection → Save → Enable.
             </p>
 
-            <Accordion type="single" collapsible className="space-y-2">
+            <Accordion
+              type="single"
+              collapsible
+              className="space-y-2"
+              value={activeTab === "connectors" ? activeConnector : undefined}
+              onValueChange={handleConnectorAccordionChange}
+            >
               {connectorSetup.map((c) => (
                 <AccordionItem key={c.type} value={c.type} className="rounded-xl border bg-card px-5">
                   <AccordionTrigger className="hover:no-underline">
