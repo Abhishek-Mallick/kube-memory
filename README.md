@@ -8,6 +8,32 @@ Every episode follows a simple loop: detect a symptom, diagnose the cause, apply
 
 ---
 
+## Deployed URLs
+
+| Surface | URL | Purpose |
+|---------|-----|---------|
+| **Dashboard (client)** | [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/) | Sign up, connect integrations, manage API keys, IDE setup |
+| **API server** | [https://kube.buildlab.in/](https://kube.buildlab.in/) | MCP (`POST /mcp`), REST (`/ingest`, `/memory/query`, `/status`), health |
+
+**MCP endpoint for IDE config:** `https://kube.buildlab.in/mcp`
+
+```json
+{
+  "mcpServers": {
+    "kube-memory": {
+      "url": "https://kube.buildlab.in/mcp",
+      "headers": {
+        "Authorization": "Bearer km_xxxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+Issue the `km_*` key from the [dashboard](https://kube-memory.buildlab.in/) → **API Keys**.
+
+---
+
 ## What kube-memory offers
 
 ### Semantic memory for agents
@@ -23,7 +49,7 @@ Store and retrieve DevOps episodes through semantic search powered by [Cognee](h
 
 ### MCP-native — one endpoint, every integration
 
-Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to a single Streamable HTTP endpoint. One `km_*` API key unlocks **29 tools** across memory, platform status, and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
+Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to `https://kube.buildlab.in/mcp`. One `km_*` API key unlocks **29 tools** across memory, platform status, and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
 
 ### Workspace dashboard
 
@@ -38,7 +64,7 @@ Each workspace is isolated: its own Cognee memory dataset, encrypted connector c
 
 ### REST API for automation
 
-The same memory graph agents use in the IDE is available over HTTP for pipelines and cron jobs — ingest structured episodes, run semantic queries, and check workspace status. Full reference: [server/API_DOC.md](./server/API_DOC.md).
+The same memory graph agents use in the IDE is available at `https://kube.buildlab.in` for pipelines and cron jobs — ingest structured episodes, run semantic queries, and check workspace status. Full reference: [server/API_DOC.md](./server/API_DOC.md).
 
 ---
 
@@ -46,7 +72,7 @@ The same memory graph agents use in the IDE is available over HTTP for pipelines
 
 1. Open the dashboard → [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/)
 2. Complete the setup journey: **Integrations → API Keys → IDE**
-3. Add kube-memory to your MCP config (endpoint and key from the dashboard)
+3. Add kube-memory to your MCP config — endpoint `https://kube.buildlab.in/mcp`, key from the dashboard
 4. Ask your agent to recall past incidents, pull pod logs, check ArgoCD sync status, or score deploy risk
 
 Detailed walkthrough: [usage.md](./usage.md)
@@ -55,7 +81,7 @@ Detailed walkthrough: [usage.md](./usage.md)
 
 ## MCP tool catalog
 
-Tools are invoked via `POST /mcp` with your workspace API key. Availability depends on which integrations you have enabled.
+Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace API key. Availability depends on which integrations you have enabled.
 
 ### Memory
 
@@ -138,7 +164,7 @@ flowchart TB
     WEB["Web dashboard\nkube-memory.buildlab.in"]
   end
 
-  subgraph Gateway["kube-memory server"]
+  subgraph Gateway["kube-memory server\nkube.buildlab.in"]
     direction TB
     AUTH["Auth layer\nJWT sessions · GitHub OAuth · km_* API keys"]
     MCP["MCP gateway\nPOST /mcp · JSON-RPC 2.0\ntools/list · tools/call"]
@@ -276,11 +302,11 @@ flowchart TB
 
 ### Credentials & surfaces
 
-| Surface | Credential | Used by |
-|---------|------------|---------|
-| Dashboard | JWT (session) | Browser after login |
-| MCP | `km_*` API key | Cursor, VS Code, Claude Desktop |
-| REST | `km_*` API key | CI pipelines, scripts, automation |
+| Surface | URL | Credential | Used by |
+|---------|-----|------------|---------|
+| Dashboard | [kube-memory.buildlab.in](https://kube-memory.buildlab.in/) | JWT (session) | Browser after login |
+| MCP | [kube.buildlab.in/mcp](https://kube.buildlab.in/mcp) | `km_*` API key | Cursor, VS Code, Claude Desktop |
+| REST | [kube.buildlab.in](https://kube.buildlab.in/) | `km_*` API key | CI pipelines, scripts, automation |
 
 API keys are role-scoped: **reader** tools are read-only; **admin** can write memory, post to Slack, sync/rollback ArgoCD, and forget entries.
 
