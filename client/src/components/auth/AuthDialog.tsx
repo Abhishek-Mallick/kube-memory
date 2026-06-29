@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GithubIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,10 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
   const [login, { isLoading: loginLoading, error: loginError }] = useLoginMutation();
   const [register, { isLoading: registerLoading, error: registerError }] = useRegisterMutation();
 
-  useEffect(() => {
-    if (open) setTab(defaultTab);
-  }, [open, defaultTab]);
+  function handleOpenChange(next: boolean) {
+    if (next) setTab(defaultTab);
+    onOpenChange(next);
+  }
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,7 +61,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
   const isRegister = tab === "register";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="auth-dialog gap-0 overflow-hidden p-0 sm:max-w-[420px]">
         <div className="auth-dialog-header px-6 pt-6 pb-4">
           <DialogHeader className="space-y-2 text-left">
