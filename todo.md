@@ -1,0 +1,8 @@
+- [ ] In entrire app change the logos
+- [ ] add prompts and resources in mcp
+- [ ] update docs with the latest mcp tools we have
+- [ ] add toast messages in whole app wherever necc.
+- [ ] add more relevant tools in each connector
+- [ ] in signin and register , in passowrd add a toggle of eye open and close for pass
+- [ ] add relevant server loggers
+- [ ] register mcp server to different registries (npx ..)
