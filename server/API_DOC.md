@@ -603,7 +603,10 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `github_list_commits` | reader+ | github | List commits on a branch or path |
 | `github_get_pull_request` | reader+ | github | Fetch a single pull request |
 | `slack_get_history` | reader+ | slack | Fetch recent Slack channel messages |
+| `slack_get_channel_info` | reader+ | slack | Get Slack channel metadata |
+| `slack_get_replies` | reader+ | slack | Fetch replies for a Slack thread |
 | `slack_list_channels` | reader+ | slack | List accessible Slack channels |
+| `slack_list_users` | reader+ | slack | List Slack users visible to the bot |
 | `slack_post_message` | admin | slack | Post a message to Slack |
 | `pagerduty_list_incidents` | reader+ | pagerduty | List PagerDuty incidents |
 | `pagerduty_get_incident` | reader+ | pagerduty | Fetch incident details |
@@ -718,7 +721,23 @@ Kubernetes tools use the workspace **kubernetes** connector kubeconfig when conf
 { "channel": "#incidents", "limit": 50 }
 ```
 
-If `channel` is omitted, the default channel from the Slack connector config is used.
+```json
+{ "channel": "C12345678" }
+```
+
+```json
+{ "channel": "C12345678", "threadTs": "1719000000.000100", "limit": 25 }
+```
+
+```json
+{ "limit": 100 }
+```
+
+```json
+{ "channel": "#incidents", "text": "New OOM fix is deployed" }
+```
+
+If `channel` is omitted for history or post-message calls, the default channel from the Slack connector config is used. `slack_get_channel_info`, `slack_get_replies`, and `slack_list_users` are read-only helper tools for channel and membership context.
 
 #### PagerDuty tools
 

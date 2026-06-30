@@ -49,7 +49,7 @@ Store and retrieve DevOps episodes through semantic search powered by [Cognee](h
 
 ### MCP-native — one endpoint, every integration
 
-Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to `https://kube.buildlab.in/mcp`. One `km_*` API key unlocks **29 tools** across memory, platform status, and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
+Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to `https://kube.buildlab.in/mcp`. One `km_*` API key unlocks the MCP tool surface across memory, platform status, and live infrastructure readouts — scoped per workspace, gated by connector configuration in the dashboard.
 
 ### Workspace dashboard
 
@@ -117,7 +117,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | Tool | Access | Description |
 |------|--------|-------------|
 | `slack_get_history` | reader+ | Fetch recent channel messages |
+| `slack_get_channel_info` | reader+ | Get channel metadata |
+| `slack_get_replies` | reader+ | Fetch replies for a thread |
 | `slack_list_channels` | reader+ | List channels the bot can access |
+| `slack_list_users` | reader+ | List Slack users visible to the bot |
 | `slack_post_message` | admin | Post a message to a channel |
 
 ### PagerDuty
@@ -181,7 +184,7 @@ flowchart TB
     CRON["Scheduled jobs\nCognee improve() on datasets"]
   end
 
-  subgraph Tools["MCP tool plane — 25 tools"]
+  subgraph Tools["MCP tool plane"]
     direction TB
 
     subgraph MemTools["Semantic memory"]
@@ -212,7 +215,10 @@ flowchart TB
       subgraph Slack["Slack connector"]
         direction LR
         T_SH["slack_get_history"]
+        T_SCI["slack_get_channel_info"]
+        T_SGR["slack_get_replies"]
         T_SLC["slack_list_channels"]
+        T_SLU["slack_list_users"]
         T_SPM["slack_post_message"]
       end
 

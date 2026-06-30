@@ -77,8 +77,15 @@ const CONNECTORS: ConnectorMeta[] = [
   {
     type: "slack",
     title: "Slack",
-    description: "Read channel history and post memory snippets.",
-    tools: ["slack_get_history", "slack_list_channels", "slack_post_message"],
+    description: "Read channel history, inspect channels, list users, and post memory snippets.",
+    tools: [
+      "slack_get_history",
+      "slack_get_channel_info",
+      "slack_get_replies",
+      "slack_list_channels",
+      "slack_list_users",
+      "slack_post_message",
+    ],
     fields: [
       { key: "secret", label: "Bot token", type: "secret", required: true },
       { key: "channel", label: "Default channel", type: "text", placeholder: "#incidents" },
@@ -345,7 +352,7 @@ export function ConnectorsPage() {
                         <ConnectorDocsLink meta={meta} />
                       </div>
                       {meta.badge === "core" && (
-                        <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-accent-signal)]">
+                        <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-(--color-accent-signal)">
                           Start here
                         </p>
                       )}

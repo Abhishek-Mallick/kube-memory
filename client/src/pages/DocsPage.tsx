@@ -105,8 +105,23 @@ const toolGroups: ToolGroup[] = [
         params: "channel (or default from connector), limit, oldest",
       },
       {
+        name: "slack_get_channel_info",
+        description: "Get metadata for a Slack channel.",
+        params: "channel (required)",
+      },
+      {
+        name: "slack_get_replies",
+        description: "Fetch replies for a Slack thread.",
+        params: "channel (required), threadTs, limit",
+      },
+      {
         name: "slack_list_channels",
         description: "List channels the bot token can access.",
+        params: "limit",
+      },
+      {
+        name: "slack_list_users",
+        description: "List users visible to the Slack bot.",
         params: "limit",
       },
       {
@@ -350,13 +365,13 @@ const connectorSetup = [
     type: "slack" as const,
     title: "Slack",
     credential: "Bot token + optional default channel",
-    tools: "slack_get_history, slack_list_channels, slack_post_message",
+    tools: "slack_get_history, slack_get_channel_info, slack_get_replies, slack_list_channels, slack_list_users, slack_post_message",
     priority: "Optional — incident channel context",
     webhook: false,
     steps: [
       "Create a Slack app at api.slack.com → add Bot token scopes: channels:history, channels:read, chat:write.",
       "Install app to workspace and copy Bot User OAuth Token (xoxb-…).",
-      "Optional: set default channel (e.g. #incidents) in dashboard.",
+      "Optional: set default channel (e.g. #incidents) in dashboard; use thread and channel info tools to inspect incidents in context.",
       "Dashboard → Integrations → Slack → paste token → Test → Save → Enable.",
       "No incoming webhook needed — kube-memory posts via Slack Bot API.",
     ],
