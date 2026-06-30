@@ -416,7 +416,7 @@ export function ConnectorsPage() {
       )}
 
       <Dialog open={Boolean(active)} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           {phase === "credentials" ? (
             <>
               <DialogHeader>
@@ -450,7 +450,7 @@ export function ConnectorsPage() {
                           setTestResult(null);
                         }}
                         rows={8}
-                        className="font-mono text-xs"
+                        className="field-sizing-fixed max-h-48 min-h-32 resize-y overflow-y-auto font-mono text-xs"
                       />
                     ) : field.type === "secret" ? (
                       <Input
