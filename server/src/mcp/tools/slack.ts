@@ -5,6 +5,9 @@ import {
   slackGetHistoryInputSchema,
   slackListChannelsInputSchema,
   slackPostMessageInputSchema,
+  slackGetChannelInfoInputSchema,
+  slackGetRepliesInputSchema,
+  slackListUsersInputSchema
 } from "../../schemas/mcp/toolInputs.js";
 import {
   getChannelHistory,
@@ -12,25 +15,24 @@ import {
   listChannels,
   postMessage,
   resolveDefaultChannel,
+  getChannelInfo,
+  getReplies,
+  listUsers
 } from "../../services/slack/client.js";
-
-function textContent(data: unknown) {
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
-  };
-}
-
-function connectorError(type: string, err: unknown) {
-  const message = err instanceof Error ? err.message : String(err);
-  return textContent({ error: message, connector: type });
-}
+import { connectorError, textContent } from "../toolResult.js";
+import { integrationToolDescription, READ_ONLY_ANNOTATIONS } from "../constants.js";
 
 export function registerSlackTools(server: McpServer): void {
   server.registerTool(
     "slack_get_history",
     {
       title: "Slack Channel History",
-      description: "Fetch recent messages from a Slack channel (read-only). Requires Slack connector.",
+      description: integrationToolDescription(
+        "Slack",
+        "Fetch recent messages from a Slack channel",
+        "Uses the configured default channel when channel is not provided"
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         channel: z.string().optional(),
         limit: z.number().int().min(1).max(200).optional(),
@@ -41,13 +43,17 @@ export function registerSlackTools(server: McpServer): void {
       const auth = requireAuthContext();
       const workspaceId = auth.workspace._id.toString();
       if (!(await isSlackAvailable(workspaceId))) {
-        return textContent({ error: "Slack connector not configured. Connect Slack in the dashboard." });
+        return textContent({ 
+          error: "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard." 
+        });
       }
       try {
         const input = slackGetHistoryInputSchema.parse(args);
         const channel = input.channel ?? (await resolveDefaultChannel(workspaceId));
         if (!channel) {
-          return textContent({ error: "channel is required (or set default channel in Slack connector config)" });
+          return textContent({ 
+            error: "Channel is required. Either provide a channel ID or configure a default Slack channel in the workspace connector." 
+          });
         }
         const messages = await getChannelHistory({ workspaceId, channel, limit: input.limit, oldest: input.oldest });
         return textContent({ channel, messages });
@@ -61,7 +67,12 @@ export function registerSlackTools(server: McpServer): void {
     "slack_list_channels",
     {
       title: "Slack List Channels",
-      description: "List Slack channels the bot can access (read-only). Requires Slack connector.",
+      description: integrationToolDescription(
+        "Slack",
+        "List channels available to the configured Slack bot ",
+        "Returns public and private channels the bot can access."
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
       inputSchema: {
         limit: z.number().int().min(1).max(200).optional(),
       },
@@ -70,7 +81,9 @@ export function registerSlackTools(server: McpServer): void {
       const auth = requireAuthContext();
       const workspaceId = auth.workspace._id.toString();
       if (!(await isSlackAvailable(workspaceId))) {
-        return textContent({ error: "Slack connector not configured. Connect Slack in the dashboard." });
+        return textContent({ 
+          error: "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard." 
+        });
       }
       try {
         const input = slackListChannelsInputSchema.parse(args);
@@ -83,10 +96,145 @@ export function registerSlackTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "slack_get_channel_info",
+    {
+      title: "Slack Get Channel Info",
+      description: integrationToolDescription(
+        "Slack",
+        "Get information about a Slack channel",
+        "Returns metadata including topic, purpose, member count and archive status."
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        channel: z.string(),
+      }
+    },
+
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+
+      if (!(await isSlackAvailable(workspaceId))) {
+        return textContent({
+          error:
+            "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard.",
+        });
+      }
+
+      try {
+        const input = slackGetChannelInfoInputSchema.parse(args);
+
+        const channel = await getChannelInfo({
+          workspaceId,
+          channel: input.channel,
+        });
+
+        return textContent({
+          channel,
+        });
+      } catch (err) {
+        return connectorError("slack", err);
+      }
+    }
+  )
+
+  server.registerTool(
+    "slack_get_replies",
+    {
+      title: "Slack Get Thread Replies",
+      description: integrationToolDescription(
+        "Slack",
+        "Get replies for a specific thread in a Slack channel",
+        "Returns messages that are replies to a specific thread in a Slack channel."
+      ),
+      inputSchema: {
+        channel: z.string(),
+        threadTs: z.string().optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      }
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+
+      if (!(await isSlackAvailable(workspaceId))) {
+        return textContent({
+          error:
+            "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard.",
+        });
+      }
+
+      try {
+        const input = slackGetRepliesInputSchema.parse(args);
+
+        const replies = await getReplies({
+          workspaceId,
+          channel: input.channel,
+          threadTs: input.threadTs,
+          limit: input.limit,
+        });
+
+        return textContent({
+          replies,
+        });
+      } catch (err) {
+        return connectorError("slack", err);
+      }
+    }
+  )
+
+  server.registerTool(
+    "slack_list_users",
+    {
+      title: "Slack List Users",
+      description: integrationToolDescription(
+        "Slack",
+        "List users in the Slack workspace",
+        "Returns workspace members visible to the configured Slack bot."
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        limit: z.number().int().min(1).max(200).optional(),
+      },
+    },
+
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+
+      if (!(await isSlackAvailable(workspaceId))) {
+        return textContent({
+          error:
+            "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard.",
+        })
+      }
+
+      try {
+        const input = slackListUsersInputSchema.parse(args);
+
+        const users = await listUsers({
+          workspaceId,
+          limit: input.limit,
+        });
+
+        return textContent({
+          users,
+        });
+      } catch (err) {
+        return connectorError("slack", err);
+      }
+    }
+  )
+
+  server.registerTool(
     "slack_post_message",
     {
       title: "Slack Post Message",
-      description: "Post a message to a Slack channel. Requires Slack connector and admin role.",
+      description: integrationToolDescription(
+        "Slack",
+        "Post a message to a Slack channel",
+        "Uses the configured default channel when channel is not provided."
+      ),
       inputSchema: {
         channel: z.string().optional(),
         text: z.string(),
@@ -99,13 +247,17 @@ export function registerSlackTools(server: McpServer): void {
       }
       const workspaceId = auth.workspace._id.toString();
       if (!(await isSlackAvailable(workspaceId))) {
-        return textContent({ error: "Slack connector not configured. Connect Slack in the dashboard." });
+        return textContent({ 
+          error: "Slack connector not configured or not enabled. Connect Slack in the kube-memory dashboard." 
+        });
       }
       try {
         const input = slackPostMessageInputSchema.parse(args);
         const channel = input.channel ?? (await resolveDefaultChannel(workspaceId));
         if (!channel) {
-          return textContent({ error: "channel is required (or set default channel in Slack connector config)" });
+          return textContent({ 
+            error: "Channel is required. Either provide a channel ID or configure a default Slack channel in the workspace connector." 
+          });
         }
         const result = await postMessage({ workspaceId, channel, text: input.text });
         return textContent({ channel, result });

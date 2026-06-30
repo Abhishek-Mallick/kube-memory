@@ -95,6 +95,20 @@ export const slackListChannelsInputSchema = z.object({
   limit: z.number().int().min(1).max(200).default(100),
 });
 
+export const slackGetChannelInfoInputSchema = z.object({
+  channel: z.string(),
+})
+
+export const slackGetRepliesInputSchema = z.object({
+  channel: z.string(),
+  threadTs: z.string().optional(), // Optional to be removed in the future, as it will be required to fetch replies for a specific thread 
+  limit: z.number().int().min(1).max(200).optional(),
+})
+
+export const slackListUsersInputSchema = z.object({
+  limit: z.number().int().min(1).max(200).optional(), 
+})
+
 export const pagerdutyListIncidentsInputSchema = z.object({
   statuses: z.array(z.enum(["triggered", "acknowledged", "resolved"])).optional(),
   serviceIds: z.array(z.string()).optional(),
