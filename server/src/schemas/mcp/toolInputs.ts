@@ -188,6 +188,45 @@ export const argocdRollbackApplicationInputSchema = z.object({
   id: z.number().int().min(0),
 });
 
+export const incidentOpenInputSchema = z.object({
+  serviceName: z.string().min(1),
+  namespace: z.string().optional(),
+  podName: z.string().optional(),
+  title: z.string().optional(),
+  severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+  githubOwner: z.string().optional(),
+  githubRepo: z.string().optional(),
+  argocdApplication: z.string().optional(),
+  prometheusQuery: z.string().optional(),
+  notifySlack: z.boolean().optional(),
+  slackChannel: z.string().optional(),
+  triggerPagerDuty: z.boolean().optional(),
+  pagerDutyServiceId: z.string().optional(),
+  rememberInMemory: z.boolean().optional(),
+});
+
+export const incidentGetInputSchema = z.object({
+  incidentId: z.string().min(1),
+});
+
+export const incidentListInputSchema = z.object({
+  limit: z.number().int().min(1).max(100).default(20),
+});
+
+export const incidentUpdateInputSchema = z.object({
+  incidentId: z.string().min(1),
+  status: z.enum(["open", "investigating", "resolved", "closed"]).optional(),
+  note: z.string().optional(),
+  notifySlack: z.boolean().optional(),
+  slackChannel: z.string().optional(),
+});
+
+export const pagerdutyCreateIncidentInputSchema = z.object({
+  title: z.string().min(1),
+  serviceId: z.string().min(1),
+  body: z.string().optional(),
+  urgency: z.enum(["high", "low"]).optional(),
+});
 export type MemoryRememberInput = z.infer<typeof memoryRememberInputSchema>;
 export type MemoryRecallInput = z.infer<typeof memoryRecallInputSchema>;
 export type MemoryForgetInput = z.infer<typeof memoryForgetInputSchema>;

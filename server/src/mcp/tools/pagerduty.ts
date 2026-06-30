@@ -8,8 +8,10 @@ import {
   pagerdutyListIncidentsInputSchema,
   pagerdutyListOncallsInputSchema,
   pagerdutyListUsersInputSchema,
+  pagerdutyCreateIncidentInputSchema,
 } from "../../schemas/mcp/toolInputs.js";
 import {
+  createIncident,
   getIncident,
   isPagerDutyAvailable,
   listIncidentLogEntries,
@@ -210,6 +212,38 @@ export function registerPagerDutyTools(server: McpServer): void {
         const input = pagerdutyListUsersInputSchema.parse(args);
         const users = await listUsers({ ...input, workspaceId });
         return textContent({ users });
+      } catch (err) {
+        return connectorError("pagerduty", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "pagerduty_create_incident",
+    {
+      title: "PagerDuty Create Incident",
+      description:
+        "Create a PagerDuty incident on a service. Requires PagerDuty connector and admin role.",
+      inputSchema: {
+        title: z.string(),
+        serviceId: z.string(),
+        body: z.string().optional(),
+        urgency: z.enum(["high", "low"]).optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required to create PagerDuty incidents" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isPagerDutyAvailable(workspaceId))) {
+        return textContent({ error: "PagerDuty connector not configured. Connect PagerDuty in the dashboard." });
+      }
+      try {
+        const input = pagerdutyCreateIncidentInputSchema.parse(args);
+        const incident = await createIncident({ ...input, workspaceId });
+        return textContent({ incident });
       } catch (err) {
         return connectorError("pagerduty", err);
       }

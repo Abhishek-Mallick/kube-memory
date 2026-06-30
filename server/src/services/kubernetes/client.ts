@@ -55,6 +55,20 @@ export function getCoreV1Api(): k8s.CoreV1Api {
   return loadGlobalKubeConfig().makeApiClient(k8s.CoreV1Api);
 }
 
+export async function getPod(options: {
+  name: string;
+  namespace?: string;
+  workspaceId?: string;
+}): Promise<k8s.V1Pod> {
+  const api = await resolveCoreV1Api(options.workspaceId);
+  if (!api) {
+    throw new Error("Kubernetes is not configured");
+  }
+
+  const namespace = options.namespace ?? "default";
+  return api.readNamespacedPod({ name: options.name, namespace });
+}
+
 export async function getPodLogs(options: {
   name: string;
   namespace?: string;

@@ -94,9 +94,10 @@ const CONNECTORS: ConnectorMeta[] = [
   {
     type: "pagerduty",
     title: "PagerDuty",
-    description: "List and inspect incidents for alert enrichment.",
+    description: "Create and inspect incidents for on-call routing and alert enrichment.",
     docsLink: "/docs?tab=connectors&connector=pagerduty",
     tools: [
+      "pagerduty_create_incident",
       "pagerduty_list_incidents",
       "pagerduty_get_incident",
       "pagerduty_list_services",
@@ -105,7 +106,10 @@ const CONNECTORS: ConnectorMeta[] = [
       "pagerduty_list_oncalls",
       "pagerduty_list_users",
     ],
-    fields: [{ key: "secret", label: "API key", type: "secret", required: true }],
+    fields: [
+      { key: "secret", label: "API key", type: "secret", required: true },
+      { key: "defaultServiceId", label: "Default service ID", type: "text", placeholder: "PXXXXXX" },
+    ],
   },
   {
     type: "prometheus",

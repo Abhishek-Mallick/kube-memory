@@ -138,3 +138,32 @@ export async function isPagerDutyAvailable(workspaceId: string): Promise<boolean
     return false;
   }
 }
+
+export async function createIncident(options: {
+  workspaceId: string;
+  title: string;
+  serviceId: string;
+  body?: string;
+  urgency?: "high" | "low";
+}): Promise<{ id: string; html_url?: string }> {
+  const data = await connectorJson<{
+    incident: { id: string; html_url?: string };
+  }>(options.workspaceId, "pagerduty", "https://api.pagerduty.com/incidents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      incident: {
+        type: "incident",
+        title: options.title,
+        service: { id: options.serviceId, type: "service_reference" },
+        urgency: options.urgency ?? "high",
+        body: {
+          type: "incident_body",
+          details: options.body ?? options.title,
+        },
+      },
+    }),
+  });
+
+  return { id: data.incident.id, html_url: data.incident.html_url };
+}

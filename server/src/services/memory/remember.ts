@@ -6,7 +6,7 @@ import {
 } from "../../schemas/graph/index.js";
 import { MemoryEventRecord } from "../../db/models/MemoryEventRecord.js";
 import { classifyFailure } from "../classification/heuristics.js";
-import { getCogneeClient } from "../cognee/client.js";
+import { getCogneeClient, isCogneeConfigured } from "../cognee/client.js";
 
 export interface RememberContext {
   workspaceId: Types.ObjectId;
@@ -24,6 +24,7 @@ export interface RememberResult {
   recordId: string;
   failureCategory?: string;
   datasetName: string;
+  indexingStatus?: "indexed" | "pending" | "failed";
 }
 
 export async function rememberMemory(
@@ -72,6 +73,18 @@ export async function rememberMemory(
     failureCategory,
   });
 
+  if (!isCogneeConfigured()) {
+    record.errorMessage = "Cognee indexing pending — COGNEE_API_KEY not configured";
+    await record.save();
+    return {
+      status: "accepted",
+      recordId: record._id.toString(),
+      failureCategory,
+      datasetName: ctx.datasetName,
+      indexingStatus: "pending",
+    };
+  }
+
   try {
     const cognee = getCogneeClient();
     const result = await cognee.remember(serializeEpisodeForCognee(episode), {
@@ -96,5 +109,6 @@ export async function rememberMemory(
     recordId: record._id.toString(),
     failureCategory,
     datasetName: ctx.datasetName,
+    indexingStatus: "indexed",
   };
 }

@@ -8,7 +8,10 @@ CRITICAL RULES:
 5. Call kube_memory_status first when unsure which integrations are enabled.
 6. If a connector is not enabled, tell the user to connect it in the kube-memory dashboard — do not fall back to local tools.
 
-Memory tools (memory_recall, memory_remember, predict_risk) use Cognee semantic search over past DevOps episodes.`;
+Memory tools (memory_recall, memory_remember, predict_risk) use Cognee semantic search over past DevOps episodes.
+
+Incident workflow: use incident_open for end-to-end detect → enrich (K8s, GitHub, Prometheus, ArgoCD) → classify → persist → memory → Slack/PagerDuty.
+Follow with incident_get, incident_list, incident_update to manage lifecycle.`;
 
 export const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,

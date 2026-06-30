@@ -3,6 +3,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import { connectMongo, isMongoConfigured } from "../db/connection.js";
 import { Connector, connectorTypes } from "../db/models/Connector.js";
 import { MemoryEventRecord } from "../db/models/MemoryEventRecord.js";
+import { IncidentRecord } from "../db/models/IncidentRecord.js";
 import { isCogneeConfigured } from "../services/cognee/client.js";
 import { isKubernetesConfigured } from "../services/kubernetes/client.js";
 
@@ -12,6 +13,7 @@ statusRouter.get("/status", authMiddleware, async (req, res, next) => {
   try {
     const workspace = req.kubeAuth!.workspace;
     let memoryEventCount = 0;
+    let incidentCount = 0;
     const connectors: Record<
       string,
       { configured: boolean; enabled: boolean; healthStatus: string | null; mcpActive: boolean }
@@ -30,6 +32,7 @@ statusRouter.get("/status", authMiddleware, async (req, res, next) => {
       await connectMongo();
       const docs = await Connector.find({ workspaceId: workspace._id }).lean();
       memoryEventCount = await MemoryEventRecord.countDocuments({ workspaceId: workspace._id });
+      incidentCount = await IncidentRecord.countDocuments({ workspaceId: workspace._id });
 
       for (const doc of docs) {
         const configured = Boolean(doc.secretEncrypted);
@@ -63,6 +66,7 @@ statusRouter.get("/status", authMiddleware, async (req, res, next) => {
         connectorsConfigured: configuredCount,
         connectorsEnabled: enabledCount,
         memoryEvents: memoryEventCount,
+        incidents: incidentCount,
       },
     });
   } catch (error) {

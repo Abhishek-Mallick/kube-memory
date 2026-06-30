@@ -7,6 +7,7 @@ import { registerSlackTools } from "./tools/slack.js";
 import { registerPagerDutyTools } from "./tools/pagerduty.js";
 import { registerPrometheusTools } from "./tools/prometheus.js";
 import { registerArgoCDTools } from "./tools/argocd.js";
+import { registerIncidentTools } from "./tools/incident.js";
 import { registerPlatformTools } from "./tools/platform.js";
 
 export function createMcpServer(): McpServer {
@@ -28,6 +29,7 @@ export function createMcpServer(): McpServer {
   registerPagerDutyTools(server);
   registerPrometheusTools(server);
   registerArgoCDTools(server);
+  registerIncidentTools(server);
 
   return server;
 }
