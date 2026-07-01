@@ -60,6 +60,14 @@ export const API_SECTIONS: ApiSection[] = [
     ],
   },
   {
+    title: "Google Cloud OAuth",
+    description: "Workspace owner flow for connecting the Google Cloud integration.",
+    endpoints: [
+      { method: "GET", path: "/connectors/gcp/oauth/start", auth: "JWT (owner)", description: "Start Google Cloud OAuth" },
+      { method: "GET", path: "/connectors/gcp/oauth/callback", auth: "None", description: "Google Cloud OAuth callback" },
+    ],
+  },
+  {
     title: "API Keys",
     description: "Issue and revoke km_* keys for MCP and REST. JWT required; write ops need workspace owner.",
     endpoints: [
@@ -130,6 +138,14 @@ export const MCP_TOOLS: McpToolEntry[] = [
   { name: "argocd_list_repositories", role: "reader+", description: "List connected Git repositories" },
   { name: "argocd_sync_application", role: "admin", description: "Trigger an ArgoCD sync" },
   { name: "argocd_rollback_application", role: "admin", description: "Rollback an ArgoCD application" },
+  { name: "gcp_list_instances", role: "reader+", description: "List Compute Engine VM instances" },
+  { name: "gcp_get_instance", role: "reader+", description: "Get details for a single Compute Engine VM instance" },
+  { name: "gcp_list_storage_buckets", role: "reader+", description: "List Cloud Storage buckets" },
+  { name: "gcp_get_storage_bucket", role: "reader+", description: "Get metadata for a single Cloud Storage bucket" },
+  { name: "gcp_list_bucket_objects", role: "reader+", description: "List objects stored in a Cloud Storage bucket" },
+  { name: "gcp_query_logs", role: "reader+", description: "Query Cloud Logging entries" },
+  { name: "gcp_list_metric_descriptors", role: "reader+", description: "List available Cloud Monitoring metric descriptors" },
+  { name: "gcp_query_metrics", role: "reader+", description: "Query Cloud Monitoring metrics" },
 ];
 
 export const CONNECTOR_TYPES = [
@@ -139,6 +155,7 @@ export const CONNECTOR_TYPES = [
   "pagerduty",
   "prometheus",
   "argocd",
+  "gcp",
 ] as const;
 
 function escapeHtml(value: string): string {

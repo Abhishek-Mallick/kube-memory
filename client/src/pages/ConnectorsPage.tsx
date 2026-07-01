@@ -158,9 +158,19 @@ const CONNECTORS: ConnectorMeta[] = [
   {
     type: "gcp",
     title: "Google Cloud",
-    description: "Read Compute Engine VM instances via OAuth — agents must not use local gcloud.",
+    description: "Read Compute Engine VMs, Cloud Storage, logs, and metrics via OAuth — agents must not use local gcloud.",
     authMethod: "oauth",
-    tools: ["gcp_list_instances", "gcp_get_instance"],
+    docsLink: "/docs?tab=connectors&connector=gcp",
+    tools: [
+      "gcp_list_instances",
+      "gcp_get_instance",
+      "gcp_list_storage_buckets",
+      "gcp_get_storage_bucket",
+      "gcp_list_bucket_objects",
+      "gcp_query_logs",
+      "gcp_list_metric_descriptors",
+      "gcp_query_metrics",
+    ],
     fields: [
       { key: "projectId", label: "Default project ID", type: "text", placeholder: "my-gcp-project", required: true },
     ],

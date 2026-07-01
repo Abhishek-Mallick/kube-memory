@@ -2,7 +2,7 @@ import { GoogleAuth } from "google-auth-library";
 import { InstancesClient } from "@google-cloud/compute";
 import { Storage } from "@google-cloud/storage";
 import { Logging } from "@google-cloud/logging";
-// import { MetricServiceClient } from "@google-cloud/monitoring";
+import { MetricServiceClient } from "@google-cloud/monitoring";
 import { getEnv } from "../../config/env.js";
 import { requireConnector } from "../connectors/connectorHttp.js";
 
@@ -133,6 +133,20 @@ function normalizeLogEntry(entry: Record<string, unknown>) {
   };
 }
 
+function normalizeMetricDescriptor(
+  descriptor: Record<string, unknown>,
+) {
+  return {
+    type: descriptor.type,
+    displayName: descriptor.displayName,
+    description: descriptor.description,
+    metricKind: descriptor.metricKind,
+    valueType: descriptor.valueType,
+    unit: descriptor.unit,
+    labels: descriptor.labels ?? [],
+  };
+}
+
 function extractZoneFromUrl(zoneUrl: string): string {
   const parts = zoneUrl.split("/");
   return parts[parts.length - 1] ?? zoneUrl;
@@ -199,27 +213,27 @@ async function getLoggingClient(workspaceId: string, project: string): Promise<L
 }
 
 // Get a Google Cloud Monitoring client using the OAuth tokens from the connector
-// async function getMonitoringClient(
-//   workspaceId: string,
-// ): Promise<MetricServiceClient> {
-//   const { secret } = await requireConnector(workspaceId, "gcp");
-//   const tokens = JSON.parse(secret) as GcpTokenSecret;
-//   const env = getEnv();
+async function getMonitoringClient(
+  workspaceId: string,
+): Promise<MetricServiceClient> {
+  const { secret } = await requireConnector(workspaceId, "gcp");
+  const tokens = JSON.parse(secret) as GcpTokenSecret;
+  const env = getEnv();
 
-//   const auth = new GoogleAuth({
-//     credentials: {
-//       type: "authorized_user",
-//       client_id: env.GCP_OAUTH_CLIENT_ID!,
-//       client_secret: env.GCP_OAUTH_CLIENT_SECRET!,
-//       refresh_token: tokens.refresh_token,
-//     },
-//   });
+  const auth = new GoogleAuth({
+    credentials: {
+      type: "authorized_user",
+      client_id: env.GCP_OAUTH_CLIENT_ID!,
+      client_secret: env.GCP_OAUTH_CLIENT_SECRET!,
+      refresh_token: tokens.refresh_token,
+    },
+  });
 
-//   return new MetricServiceClient({
-//     // @ts-ignore
-//     auth,
-//   });
-// }
+  return new MetricServiceClient({
+    // @ts-ignore
+    auth,
+  });
+}
 
 export async function isGcpAvailable(workspaceId: string): Promise<boolean> {
   try {
@@ -428,7 +442,94 @@ export async function queryLogs(options: {
 //   return { project, logNames };
 // }
 
+export async function listMetricDescriptors(options: {
+  workspaceId: string;
+  project?: string;
+  filter?: string;
+  pageSize?: number;
+}): Promise<unknown> {
+  const { config } = await requireConnector(options.workspaceId, "gcp");
 
+  const project = projectFromConfig(config, options.project);
+
+  const client = await getMonitoringClient(options.workspaceId);
+
+  const [descriptors] =
+    await client.listMetricDescriptors({
+      name: `projects/${project}`,
+      filter: options.filter,
+      pageSize: options.pageSize ?? 100,
+    });
+
+  return {
+    project,
+    count: descriptors.length,
+    metrics: descriptors.map((d) =>
+      normalizeMetricDescriptor(
+        d as unknown as Record<string, unknown>,
+      ),
+    ),
+  };
+}
+
+export async function queryMetrics(options: {
+  workspaceId: string;
+  project?: string;
+
+  metricType: string;
+
+  resourceType?: string;
+
+  minutes?: number;
+
+  pageSize?: number;
+}): Promise<unknown> {
+  const { config } = await requireConnector(options.workspaceId, "gcp");
+
+  const project = projectFromConfig(config, options.project);
+
+  const client = await getMonitoringClient(
+    options.workspaceId,
+  );
+
+  const now = {
+    seconds: Math.floor(Date.now() / 1000),
+  };
+
+  const start = {
+    seconds:
+      Math.floor(Date.now() / 1000) -
+      (options.minutes ?? 60) * 60,
+  };
+
+  let filter = `metric.type="${options.metricType}"`;
+
+  if (options.resourceType) {
+    filter += ` AND resource.type="${options.resourceType}"`;
+  }
+
+  const [series] = await client.listTimeSeries({
+    name: `projects/${project}`,
+
+    filter,
+
+    interval: {
+      startTime: start,
+      endTime: now,
+    },
+
+    view: "FULL",
+
+    pageSize: options.pageSize ?? 100,
+  });
+
+  return {
+    project,
+    filter,
+    count: series.length,
+    timeSeries: series,
+  };
+}
 
 export async function testGcpConnection(workspaceId: string): Promise<void> {
   const { config } = await requireConnector(workspaceId, "gcp");

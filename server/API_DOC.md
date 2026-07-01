@@ -679,6 +679,12 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `argocd_rollback_application` | admin | argocd | Rollback to prior revision |
 | `gcp_list_instances` | reader+ | gcp | List Compute Engine VM instances |
 | `gcp_get_instance` | reader+ | gcp | Get a single Compute Engine VM instance |
+| `gcp_list_storage_buckets` | reader+ | gcp | List Cloud Storage buckets |
+| `gcp_get_storage_bucket` | reader+ | gcp | Get metadata for a single Cloud Storage bucket |
+| `gcp_list_bucket_objects` | reader+ | gcp | List objects stored in a Cloud Storage bucket |
+| `gcp_query_logs` | reader+ | gcp | Query Cloud Logging entries |
+| `gcp_list_metric_descriptors` | reader+ | gcp | List Cloud Monitoring metric descriptors |
+| `gcp_query_metrics` | reader+ | gcp | Query Cloud Monitoring metrics |
 
 Connector tools require the matching integration to be **configured and enabled** in the dashboard. Write tools (`slack_post_message`, `argocd_sync_application`, `argocd_rollback_application`) require **admin** API key role.
 
@@ -698,6 +704,69 @@ Connector tools require the matching integration to be **configured and enabled*
   "project": "optional — defaults to connector config projectId",
   "zone": "us-central1-a",
   "instance": "my-vm"
+}
+```
+
+#### `gcp_list_storage_buckets`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId"
+}
+```
+
+#### `gcp_get_storage_bucket`
+
+```json
+{
+  "bucket": "my-bucket"
+}
+```
+
+#### `gcp_list_bucket_objects`
+
+```json
+{
+  "bucket": "my-bucket",
+  "prefix": "optional/path/",
+  "maxResults": 100
+}
+```
+
+#### `gcp_query_logs`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId",
+  "severity": "ERROR",
+  "resourceType": "k8s_container",
+  "search": "OOMKilled",
+  "from": "2026-06-27T00:00:00Z",
+  "to": "2026-06-27T12:00:00Z",
+  "pageSize": 50,
+  "order": "desc"
+}
+```
+
+#### `gcp_list_metric_descriptors`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId",
+  "filter": "metric.type = starts_with(\"compute.googleapis.com/\")",
+  "pageSize": 100
+}
+```
+
+#### `gcp_query_metrics`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId",
+  "metricType": "compute.googleapis.com/instance/cpu/utilization",
+  "resourceType": "gce_instance",
+  "minutes": 60,
+  "pageSize": 100
 }
 ```
 

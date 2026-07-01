@@ -282,6 +282,41 @@ export const gcpQueryLogsInputSchema = z.object({
   order: z.enum(["asc", "desc"]).optional(),
 });
 
+export const gcpListMetricDescriptorsInputSchema = z.object({
+  project: z.string().optional(),
+
+  filter: z.string().optional(),
+
+  pageSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(1000)
+    .optional(),
+});
+
+export const gcpQueryMetricsInputSchema =
+  z.object({
+    project: z.string().optional(),
+
+    metricType: z.string(),
+
+    resourceType: z.string().optional(),
+
+    minutes: z
+      .number()
+      .int()
+      .min(1)
+      .max(10080)
+      .optional(),
+
+    pageSize: z
+      .number()
+      .int()
+      .min(1)
+      .max(1000)
+      .optional(),
+  });
 export type MemoryRememberInput = z.infer<typeof memoryRememberInputSchema>;
 export type MemoryRecallInput = z.infer<typeof memoryRecallInputSchema>;
 export type MemoryForgetInput = z.infer<typeof memoryForgetInputSchema>;

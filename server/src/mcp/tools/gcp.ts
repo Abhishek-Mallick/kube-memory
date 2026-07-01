@@ -8,6 +8,8 @@ import {
   gcpGetStorageBucketInputSchema,
   gcpListBucketObjectsInputSchema,
   gcpQueryLogsInputSchema,
+  gcpListMetricDescriptorsInputSchema,
+  gcpQueryMetricsInputSchema
 } from "../../schemas/mcp/toolInputs.js";
 import {
   getInstance,
@@ -17,6 +19,8 @@ import {
   getStorageBucket,
   listBucketObjects,
   queryLogs,
+  listMetricDescriptors,
+  queryMetrics,
 } from "../../services/gcp/client.js";
 import { integrationToolDescription, READ_ONLY_ANNOTATIONS } from "../constants.js";
 import { connectorError, textContent } from "../toolResult.js";
@@ -270,6 +274,95 @@ export function registerGcpTools(server: McpServer): void {
         return textContent({
           result,
         });
+      } catch (err) {
+        return connectorError("gcp", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "gcp_list_metric_descriptors",
+    {
+      title: "GCP List Metric Descriptors",
+      description: integrationToolDescription(
+        "Google Cloud",
+        "List available Cloud Monitoring metric descriptors",
+        "Useful for discovering metrics before querying them.",
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        project: z.string().optional(),
+        filter: z.string().optional(),
+        pageSize: z.number().int().min(1).max(1000).optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+
+      if (!(await isGcpAvailable(workspaceId))) {
+        return textContent({
+          error:
+            "Google Cloud connector not configured or not enabled. Connect Google Cloud in the kube-memory dashboard.",
+        });
+      }
+
+      try {
+        const input =
+          gcpListMetricDescriptorsInputSchema.parse(args);
+
+        const result =
+          await listMetricDescriptors({
+            workspaceId,
+            ...input,
+          });
+
+        return textContent({ result });
+      } catch (err) {
+        return connectorError("gcp", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "gcp_query_metrics",
+    {
+      title: "GCP Query Metrics",
+      description: integrationToolDescription(
+        "Google Cloud",
+        "Query Cloud Monitoring metrics",
+        "Retrieve Cloud Monitoring time series for a metric.",
+      ),
+      annotations: READ_ONLY_ANNOTATIONS,
+      inputSchema: {
+        project: z.string().optional(),
+        metricType: z.string(),
+        resourceType: z.string().optional(),
+        minutes: z.number().int().min(1).max(10080).optional(),
+        pageSize: z.number().int().min(1).max(1000).optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      const workspaceId = auth.workspace._id.toString();
+
+      if (!(await isGcpAvailable(workspaceId))) {
+        return textContent({
+          error:
+            "Google Cloud connector not configured or not enabled. Connect Google Cloud in the kube-memory dashboard.",
+        });
+      }
+
+      try {
+        const input =
+          gcpQueryMetricsInputSchema.parse(args);
+
+        const result = await queryMetrics({
+          workspaceId,
+          ...input,
+        });
+
+        return textContent({ result });
       } catch (err) {
         return connectorError("gcp", err);
       }

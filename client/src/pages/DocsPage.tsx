@@ -290,6 +290,36 @@ const toolGroups: ToolGroup[] = [
         description: "Get details for a single Compute Engine VM instance.",
         params: "zone (required), instance (required), project (optional)",
       },
+      {
+        name: "gcp_list_storage_buckets",
+        description: "List Cloud Storage buckets available to the workspace connector.",
+        params: "project (optional)",
+      },
+      {
+        name: "gcp_get_storage_bucket",
+        description: "Get metadata for a single Cloud Storage bucket.",
+        params: "bucket (required)",
+      },
+      {
+        name: "gcp_list_bucket_objects",
+        description: "List objects stored in a Cloud Storage bucket.",
+        params: "bucket (required), prefix, maxResults",
+      },
+      {
+        name: "gcp_query_logs",
+        description: "Query Cloud Logging entries by severity, resource type, time window, or text.",
+        params: "project, severity, resourceType, search, from, to, pageSize, order",
+      },
+      {
+        name: "gcp_list_metric_descriptors",
+        description: "List Cloud Monitoring metric descriptors for discovery.",
+        params: "project, filter, pageSize",
+      },
+      {
+        name: "gcp_query_metrics",
+        description: "Query Cloud Monitoring time series for a metric.",
+        params: "project, metricType (required), resourceType, minutes, pageSize",
+      },
     ],
   },
 ];
@@ -414,7 +444,8 @@ const connectorSetup = [
     type: "gcp" as const,
     title: "Google Cloud",
     credential: "OAuth 2.0 + default project ID",
-    tools: "gcp_list_instances, gcp_get_instance",
+    tools:
+      "gcp_list_instances, gcp_get_instance, gcp_list_storage_buckets, gcp_get_storage_bucket, gcp_list_bucket_objects, gcp_query_logs, gcp_list_metric_descriptors, gcp_query_metrics",
     priority: "Optional — Compute Engine VM state during infra incidents",
     webhook: false,
     steps: [
@@ -426,7 +457,7 @@ const connectorSetup = [
       "Authorize read-only Compute access → Test → Save → Enable.",
     ],
     dashboardFields: "Default project ID (required), OAuth via Google sign-in",
-    demoPrompt: "List Compute Engine instances in my project — any VMs in a bad state during this incident?",
+    demoPrompt: "List Compute Engine instances, Storage buckets, or logs in my project — any GCP resource in a bad state during this incident?",
   },
 ];
 

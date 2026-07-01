@@ -56,7 +56,7 @@ Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to `https:
 Manage everything at [kube-memory.buildlab.in](https://kube-memory.buildlab.in/):
 
 1. **Sign up** — email/password or GitHub OAuth
-2. **Integrations** — connect Kubernetes, GitHub, Slack, PagerDuty, Prometheus, or ArgoCD (test → save → enable)
+2. **Integrations** — connect Kubernetes, GitHub, Slack, PagerDuty, Prometheus, ArgoCD, or Google Cloud (test → save → enable)
 3. **API Keys** — issue `km_*` keys for IDE and automation (requires ≥1 integration)
 4. **IDE setup** — copy the MCP snippet from the API Keys page
 
@@ -161,6 +161,19 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `argocd_list_repositories` | reader+ | List connected Git repositories |
 | `argocd_sync_application` | admin | Trigger a sync |
 | `argocd_rollback_application` | admin | Roll back to a previous revision |
+
+### Google Cloud
+
+| Tool | Access | Description |
+|------|--------|-------------|
+| `gcp_list_instances` | reader+ | List Compute Engine VM instances |
+| `gcp_get_instance` | reader+ | Get details for a single Compute Engine VM instance |
+| `gcp_list_storage_buckets` | reader+ | List Cloud Storage buckets |
+| `gcp_get_storage_bucket` | reader+ | Get metadata for a single Cloud Storage bucket |
+| `gcp_list_bucket_objects` | reader+ | List objects stored in a Cloud Storage bucket |
+| `gcp_query_logs` | reader+ | Query Cloud Logging entries |
+| `gcp_list_metric_descriptors` | reader+ | List Cloud Monitoring metric descriptors |
+| `gcp_query_metrics` | reader+ | Query Cloud Monitoring metrics |
 
 ---
 

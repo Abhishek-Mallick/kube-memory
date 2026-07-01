@@ -5,7 +5,7 @@ import { Connector } from "../../db/models/Connector.js";
 import { encryptSecret, decryptSecret, isEncryptionConfigured } from "../../utils/encryption.js";
 import { invalidateConnectorCache } from "../connectors/connectorSecrets.js";
 
-const GCP_SCOPE = "https://www.googleapis.com/auth/compute.readonly";
+const GCP_SCOPE = "https://www.googleapis.com/auth/cloud-platform.read-only";
 const STATE_TTL_SEC = 600;
 
 export interface GcpOAuthState {
