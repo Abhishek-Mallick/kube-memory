@@ -7,14 +7,16 @@
 - [ ] add relevant server loggers
 - [ ] register mcp server to different registries (npx ..)
 - [ ] GCP Integration
-    - [ ] gcp_list_instances
-    - [ ] gcp_get_instance
-    - [ ] gcp_list_buckets
-    - [ ] gcp_list_bucket_objects
-    - [ ] gcp_query_logs
+    - [x] gcp_list_instances
+    - [x] gcp_get_instance
+    - [x] gcp_list_buckets
+    - [x] gcp_get_storage_bucket
+    - [x] gcp_list_bucket_objects
+    - [x] gcp_query_logs
     - [ ] gcp_list_cloud_run_services
     - [ ] gcp_get_cloud_run_service
     - [ ] gcp_list_cloud_run_revisions
     - [ ] gcp_list_clusters
     - [ ] gcp_get_cluster
-    - [ ] gcp_query_metrics
+    - [x] gcp_query_metrics
+    - [x] gcp_list_metric_descriptors

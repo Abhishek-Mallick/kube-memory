@@ -239,6 +239,49 @@ export const gcpGetInstanceInputSchema = z.object({
   instance: z.string().min(1),
 });
 
+export const gcpListStorageBucketsInputSchema = z.object({
+  project: z.string().optional(),
+});
+
+export const gcpGetStorageBucketInputSchema = z.object({
+  // project: z.string().optional(),
+  bucket: z.string()
+})
+
+export const gcpListBucketObjectsInputSchema = z.object({
+  bucket: z.string(),
+  prefix: z.string().optional(),
+  maxResults: z.number().int().min(1).max(1000).optional(),
+})
+
+export const gcpQueryLogsInputSchema = z.object({
+  project: z.string().optional(),
+
+  severity: z.enum([
+    "DEFAULT",
+    "DEBUG",
+    "INFO",
+    "NOTICE",
+    "WARNING",
+    "ERROR",
+    "CRITICAL",
+    "ALERT",
+    "EMERGENCY",
+  ]).optional(),
+
+  resourceType: z.string().optional(),
+
+  search: z.string().optional(),
+
+  from: z.string().optional(),
+
+  to: z.string().optional(),
+
+  pageSize: z.number().int().min(1).max(100).optional(),
+
+  order: z.enum(["asc", "desc"]).optional(),
+});
+
 export type MemoryRememberInput = z.infer<typeof memoryRememberInputSchema>;
 export type MemoryRecallInput = z.infer<typeof memoryRecallInputSchema>;
 export type MemoryForgetInput = z.infer<typeof memoryForgetInputSchema>;
