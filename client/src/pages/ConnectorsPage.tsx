@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InformationCircleIcon, Plug01Icon } from "@hugeicons/core-free-icons";
@@ -35,6 +35,8 @@ import {
   useListConnectorsQuery,
   useTestConnectorMutation,
   useUpsertConnectorMutation,
+  useDeleteConnectorMutation,
+  useStartGcpOAuthMutation,
 } from "@/store/api/connectorsApi";
 
 interface ConnectorMeta {
@@ -42,6 +44,7 @@ interface ConnectorMeta {
   title: string;
   description: string;
   badge?: "core";
+  authMethod?: "credentials" | "oauth";
   tools: string[];
   docsLink?: string;
   fields: Array<{ key: string; label: string; type: "text" | "textarea" | "secret"; placeholder?: string; required?: boolean }>;
@@ -152,6 +155,16 @@ const CONNECTORS: ConnectorMeta[] = [
       { key: "secret", label: "API token", type: "secret", required: true },
     ],
   },
+  {
+    type: "gcp",
+    title: "Google Cloud",
+    description: "Read Compute Engine VM instances via OAuth — agents must not use local gcloud.",
+    authMethod: "oauth",
+    tools: ["gcp_list_instances", "gcp_get_instance"],
+    fields: [
+      { key: "projectId", label: "Default project ID", type: "text", placeholder: "my-gcp-project", required: true },
+    ],
+  },
 ];
 
 type DialogPhase = "credentials" | "post-save";
@@ -166,6 +179,11 @@ function connectorStatus(
 
 function hasRequiredFields(meta: ConnectorMeta, config: Record<string, string>, secret: string, isConfigured: boolean) {
   if (isConfigured) return true;
+  if (meta.authMethod === "oauth") {
+    return meta.fields
+      .filter((f) => f.required)
+      .every((f) => config[f.key]?.trim());
+  }
   for (const field of meta.fields) {
     if (!field.required) continue;
     if (field.type === "secret" || field.type === "textarea") {
@@ -203,9 +221,12 @@ function ConnectorDocsLink({ meta }: { meta: ConnectorMeta }) {
 }
 
 export function ConnectorsPage() {
-  const { data, isLoading } = useListConnectorsQuery();
+  const { data, isLoading, refetch } = useListConnectorsQuery();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [upsert, { isLoading: saving }] = useUpsertConnectorMutation();
   const [test, { isLoading: testing }] = useTestConnectorMutation();
+  const [deleteConnector, { isLoading: disconnecting }] = useDeleteConnectorMutation();
+  const [startGcpOAuth, { isLoading: startingOAuth }] = useStartGcpOAuthMutation();
   const [active, setActive] = useState<ConnectorMeta | null>(null);
   const [phase, setPhase] = useState<DialogPhase>("credentials");
   const [enabled, setEnabled] = useState(false);
@@ -216,6 +237,30 @@ export function ConnectorsPage() {
   const configuredCount = data
     ? Object.values(data.connectors).filter((c) => c.configured).length
     : 0;
+
+  useEffect(() => {
+    const gcpStatus = searchParams.get("gcp");
+    if (!gcpStatus) return;
+
+    const gcpMeta = CONNECTORS.find((c) => c.type === "gcp");
+    if (gcpStatus === "connected" && gcpMeta) {
+      void refetch().then((result) => {
+        const summary = result.data?.connectors.gcp;
+        setConfig({ projectId: String(summary?.config.projectId ?? "") });
+      });
+      toast.success("Google Cloud connected successfully");
+      setActive(gcpMeta);
+      setPhase("post-save");
+      setEnabled(false);
+      setTestResult({ ok: true, message: "Google Cloud connection successful" });
+    } else if (gcpStatus === "error") {
+      toast.error("Google Cloud connection failed");
+    }
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("gcp");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, refetch]);
 
   function openConfigure(meta: ConnectorMeta) {
     const current = data?.connectors[meta.type];
@@ -311,6 +356,29 @@ export function ConnectorsPage() {
     toast.success(`${meta.title} ${summary.enabled ? "disabled" : "enabled"}`);
   }
 
+  async function handleOAuthConnect() {
+    if (!active || active.authMethod !== "oauth") return;
+    if (!hasRequiredFields(active, config, secret, false)) {
+      toast.error("Fill in required fields before connecting");
+      return;
+    }
+
+    try {
+      const { url } = await startGcpOAuth({ projectId: config.projectId.trim() }).unwrap();
+      window.location.href = url;
+    } catch {
+      toast.error("Failed to start Google Cloud OAuth");
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!active) return;
+    await deleteConnector(active.type).unwrap();
+    toast.success(`${active.title} disconnected`);
+    closeDialog();
+  }
+
+  const isOAuthActive = active?.authMethod === "oauth";
   const isConfiguredActive = active ? Boolean(data?.connectors[active.type]?.configured) : false;
   const canSave =
     isConfiguredActive || testResult?.ok === true;
@@ -331,7 +399,7 @@ export function ConnectorsPage() {
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
@@ -430,11 +498,23 @@ export function ConnectorsPage() {
                   {active ? <ConnectorDocsLink meta={active} /> : null}
                 </DialogTitle>
                 <DialogDescription>
-                  {isConfiguredActive
-                    ? "Update credentials or toggle availability below."
-                    : "Enter credentials, test the connection, then save. You can enable the integration after saving."}
+                  {isOAuthActive && !isConfiguredActive
+                    ? "Enter your default GCP project ID, then authorize kube-memory via Google OAuth."
+                    : isConfiguredActive
+                      ? isOAuthActive
+                        ? "Manage OAuth connection, project settings, or toggle availability below."
+                        : "Update credentials or toggle availability below."
+                      : "Enter credentials, test the connection, then save. You can enable the integration after saving."}
                 </DialogDescription>
               </DialogHeader>
+              {isOAuthActive && isConfiguredActive && (
+                <Alert>
+                  <AlertTitle>Connected via Google OAuth</AlertTitle>
+                  <AlertDescription>
+                    Credentials are stored encrypted. Use Reconnect to refresh the OAuth grant.
+                  </AlertDescription>
+                </Alert>
+              )}
               <FieldGroup>
                 {active?.fields.map((field) => (
                   <Field key={field.key}>
@@ -504,12 +584,39 @@ export function ConnectorsPage() {
               )}
 
               <DialogFooter className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end sm:gap-4">
-                <Button variant="outline" onClick={handleTest} disabled={testing || saving}>
-                  {testing ? "Testing…" : "Test connection"}
-                </Button>
-                <Button onClick={handleSave} disabled={saving || !canSave}>
-                  {saving ? "Saving…" : "Save"}
-                </Button>
+                {isOAuthActive && isConfiguredActive && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleDisconnect}
+                      disabled={disconnecting || saving}
+                      className="mr-auto text-destructive hover:text-destructive"
+                    >
+                      {disconnecting ? "Disconnecting…" : "Disconnect"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleOAuthConnect}
+                      disabled={startingOAuth || !config.projectId?.trim()}
+                    >
+                      {startingOAuth ? "Redirecting…" : "Reconnect"}
+                    </Button>
+                  </>
+                )}
+                {!(isOAuthActive && !isConfiguredActive) && (
+                  <Button variant="outline" onClick={handleTest} disabled={testing || saving}>
+                    {testing ? "Testing…" : "Test connection"}
+                  </Button>
+                )}
+                {isOAuthActive && !isConfiguredActive ? (
+                  <Button onClick={handleOAuthConnect} disabled={startingOAuth || !config.projectId?.trim()}>
+                    {startingOAuth ? "Redirecting…" : "Connect with Google Cloud"}
+                  </Button>
+                ) : (
+                  <Button onClick={handleSave} disabled={saving || !canSave}>
+                    {saving ? "Saving…" : "Save"}
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : (

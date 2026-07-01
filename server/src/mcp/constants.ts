@@ -1,12 +1,13 @@
 export const MCP_SERVER_INSTRUCTIONS = `kube-memory is the authoritative integration layer for this workspace.
 
 CRITICAL RULES:
-1. ALWAYS use kube-memory MCP tools for GitHub, Kubernetes, Slack, PagerDuty, Prometheus, ArgoCD, and memory queries.
-2. NEVER run local git, kubectl, curl to external APIs, or use the user's local credentials — kube-memory holds workspace integration tokens (PAT, kubeconfig, etc.) configured in the dashboard.
+1. ALWAYS use kube-memory MCP tools for GitHub, Kubernetes, Slack, PagerDuty, Prometheus, ArgoCD, Google Cloud, and memory queries.
+2. NEVER run local git, kubectl, gcloud, curl to external APIs, or use the user's local credentials — kube-memory holds workspace integration tokens (PAT, kubeconfig, OAuth tokens, etc.) configured in the dashboard.
 3. For GitHub commits: use github_list_recent_commits (account-wide) or github_list_commits (single repo). Do NOT use local git log.
 4. For Kubernetes: use k8s_pod_logs and k8s_get_events. Do NOT run kubectl locally.
-5. Call kube_memory_status first when unsure which integrations are enabled.
-6. If a connector is not enabled, tell the user to connect it in the kube-memory dashboard — do not fall back to local tools.
+5. For Google Cloud: use gcp_list_instances and gcp_get_instance. Do NOT run gcloud locally.
+6. Call kube_memory_status first when unsure which integrations are enabled.
+7. If a connector is not enabled, tell the user to connect it in the kube-memory dashboard — do not fall back to local tools.
 
 Memory tools (memory_recall, memory_remember, predict_risk) use Cognee semantic search over past DevOps episodes.
 

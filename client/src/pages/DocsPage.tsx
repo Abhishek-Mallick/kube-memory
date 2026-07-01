@@ -17,7 +17,7 @@ import "@/styles/landing.css";
 type ToolGroup = {
   id: string;
   label: string;
-  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd";
+  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd" | "gcp";
   tools: Array<{ name: string; description: string; params: string; role?: string }>;
 };
 
@@ -275,6 +275,23 @@ const toolGroups: ToolGroup[] = [
       },
     ],
   },
+  {
+    id: "gcp",
+    label: "Google Cloud",
+    connector: "gcp",
+    tools: [
+      {
+        name: "gcp_list_instances",
+        description: "List Compute Engine VM instances in a project (optionally filtered by zone).",
+        params: "project (optional), zone (optional)",
+      },
+      {
+        name: "gcp_get_instance",
+        description: "Get details for a single Compute Engine VM instance.",
+        params: "zone (required), instance (required), project (optional)",
+      },
+    ],
+  },
 ];
 
 const allTools = toolGroups.flatMap((g) => g.tools);
@@ -393,6 +410,24 @@ const connectorSetup = [
     dashboardFields: "API key (secret)",
     demoPrompt: "List triggered incidents and cross-reference with past memory episodes.",
   },
+  {
+    type: "gcp" as const,
+    title: "Google Cloud",
+    credential: "OAuth 2.0 + default project ID",
+    tools: "gcp_list_instances, gcp_get_instance",
+    priority: "Optional — Compute Engine VM state during infra incidents",
+    webhook: false,
+    steps: [
+      "Google Cloud Console → APIs & Services → Enable Compute Engine API for your project.",
+      "Configure OAuth consent screen and create an OAuth 2.0 Web client.",
+      "Add authorized redirect URI matching GCP_OAUTH_CALLBACK_URL on the kube-memory server (e.g. http://localhost:3000/connectors/gcp/oauth/callback).",
+      "Set GCP_OAUTH_CLIENT_ID, GCP_OAUTH_CLIENT_SECRET, and GCP_OAUTH_CALLBACK_URL in server environment.",
+      "Dashboard → Integrations → Google Cloud → enter default project ID → Connect with Google Cloud.",
+      "Authorize read-only Compute access → Test → Save → Enable.",
+    ],
+    dashboardFields: "Default project ID (required), OAuth via Google sign-in",
+    demoPrompt: "List Compute Engine instances in my project — any VMs in a bad state during this incident?",
+  },
 ];
 
 const futureConnectors = [
@@ -402,7 +437,7 @@ const futureConnectors = [
   { name: "Jira / Linear", why: "Link incidents to tickets and sprint context" },
   { name: "Sentry", why: "App errors tied to deploy episodes" },
   { name: "Datadog / New Relic", why: "APM traces for post-deploy regressions" },
-  { name: "Cloud APIs (AWS/GCP/Azure)", why: "Node pool and managed service state during infra incidents" },
+  { name: "Cloud APIs (AWS/Azure)", why: "Node pool and managed service state during infra incidents" },
   { name: "Webhook ingest", why: "Push Alertmanager/PagerDuty events → auto memory_remember" },
 ];
 

@@ -17,6 +17,7 @@ const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   pagerduty: "PagerDuty",
   prometheus: "Prometheus",
   argocd: "ArgoCD",
+  gcp: "Google Cloud",
 };
 
 function connectorRowStatus(summary: ConnectorSummary | undefined): {
@@ -41,7 +42,7 @@ export function ActiveConnectorsPanel() {
       <section className="space-y-3">
         <Skeleton className="h-5 w-40" />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 7 }).map((_, i) => (
             <Skeleton key={i} className="h-14 rounded-lg" />
           ))}
         </div>

@@ -7,6 +7,7 @@ export const connectorTypes = [
   "pagerduty",
   "prometheus",
   "argocd",
+  "gcp",
 ] as const;
 
 export type ConnectorType = (typeof connectorTypes)[number];

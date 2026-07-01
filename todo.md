@@ -6,3 +6,15 @@
 - [x] in signin and register , in passowrd add a toggle of eye open and close for pass
 - [ ] add relevant server loggers
 - [ ] register mcp server to different registries (npx ..)
+- [ ] GCP Integration
+    - [ ] gcp_list_instances
+    - [ ] gcp_get_instance
+    - [ ] gcp_list_buckets
+    - [ ] gcp_list_bucket_objects
+    - [ ] gcp_query_logs
+    - [ ] gcp_list_cloud_run_services
+    - [ ] gcp_get_cloud_run_service
+    - [ ] gcp_list_cloud_run_revisions
+    - [ ] gcp_list_clusters
+    - [ ] gcp_get_cluster
+    - [ ] gcp_query_metrics

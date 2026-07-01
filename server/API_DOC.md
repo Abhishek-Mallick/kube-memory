@@ -329,7 +329,7 @@ The client stores the JWT and calls `/auth/me`.
 
 Connector secrets are encrypted at rest. List/upsert responses **never** return decrypted secrets.
 
-Supported types: `kubernetes`, `github`, `slack`, `pagerduty`, `prometheus`, `argocd`
+Supported types: `kubernetes`, `github`, `slack`, `pagerduty`, `prometheus`, `argocd`, `gcp`
 
 ### `GET /connectors`
 
@@ -417,10 +417,21 @@ Create or update a connector. **Workspace owner required.**
 }
 ```
 
+**Request — Google Cloud**
+
+Google Cloud uses OAuth for credentials. Use the OAuth endpoints below to connect; `PUT` is only needed to update `config` (e.g. `projectId`) or toggle `enabled` after OAuth.
+
+```json
+{
+  "enabled": true,
+  "config": { "projectId": "my-gcp-project" }
+}
+```
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `enabled` | boolean | No | Default `true` |
-| `config` | object | No | Non-secret settings (org, channel, baseUrl) |
+| `config` | object | No | Non-secret settings (org, channel, baseUrl, projectId) |
 | `secret` | string | No | Credential; omit to keep existing encrypted value |
 
 **Response `200`**
@@ -448,6 +459,40 @@ Remove a connector configuration. **Workspace owner required.**
 ```json
 { "status": "ok" }
 ```
+
+---
+
+### `GET /connectors/gcp/oauth/start`
+
+Start Google Cloud OAuth for the workspace. **Workspace owner required.**
+
+**Query:** `projectId` (required) — default GCP project stored in connector config.
+
+**Response `200`**
+
+```json
+{ "url": "https://accounts.google.com/o/oauth2/v2/auth?..." }
+```
+
+**Errors:** `400` if `projectId` missing; `503` if GCP OAuth env vars are not configured.
+
+---
+
+### `GET /connectors/gcp/oauth/callback`
+
+OAuth callback from Google (public). Exchanges the authorization code for tokens, encrypts and stores them, then redirects to the client:
+
+`{CLIENT_URL}/dashboard/integrations?gcp=connected` or `?gcp=error`
+
+**Server env (required for GCP connector):**
+
+| Variable | Description |
+|----------|-------------|
+| `GCP_OAUTH_CLIENT_ID` | Google OAuth 2.0 Web client ID |
+| `GCP_OAUTH_CLIENT_SECRET` | Google OAuth client secret |
+| `GCP_OAUTH_CALLBACK_URL` | Must match authorized redirect URI in Google Cloud Console (e.g. `http://localhost:3000/connectors/gcp/oauth/callback`) |
+
+Enable **Compute Engine API** in the GCP project and configure the OAuth consent screen with scope `compute.readonly`.
 
 ---
 
@@ -632,8 +677,29 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `argocd_list_repositories` | reader+ | argocd | List connected Git repositories |
 | `argocd_sync_application` | admin | argocd | Trigger application sync |
 | `argocd_rollback_application` | admin | argocd | Rollback to prior revision |
+| `gcp_list_instances` | reader+ | gcp | List Compute Engine VM instances |
+| `gcp_get_instance` | reader+ | gcp | Get a single Compute Engine VM instance |
 
 Connector tools require the matching integration to be **configured and enabled** in the dashboard. Write tools (`slack_post_message`, `argocd_sync_application`, `argocd_rollback_application`) require **admin** API key role.
+
+#### `gcp_list_instances`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId",
+  "zone": "optional — omit to list across all zones"
+}
+```
+
+#### `gcp_get_instance`
+
+```json
+{
+  "project": "optional — defaults to connector config projectId",
+  "zone": "us-central1-a",
+  "instance": "my-vm"
+}
+```
 
 #### `memory_remember`
 

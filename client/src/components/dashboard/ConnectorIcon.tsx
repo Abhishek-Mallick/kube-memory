@@ -1,5 +1,6 @@
 import type { ConnectorType } from "@/store/api/connectorsApi";
 import { cn } from "@/lib/utils";
+import googleCloudLogo from "@/assets/images/GoogleCloud.png";
 import argocdLogo from "@/assets/images/ArgoCD.png";
 import githubLogo from "@/assets/images/GitHub.png";
 import kubernetesLogo from "@/assets/images/Kubernetes.png";
@@ -19,6 +20,7 @@ const CONNECTOR_LOGOS: Record<ConnectorType, string> = {
   pagerduty: pagerdutyLogo,
   prometheus: prometheusLogo,
   argocd: argocdLogo,
+  gcp: googleCloudLogo,
 };
 
 export function ConnectorIcon({ type, className }: ConnectorIconProps) {

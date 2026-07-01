@@ -227,6 +227,18 @@ export const pagerdutyCreateIncidentInputSchema = z.object({
   body: z.string().optional(),
   urgency: z.enum(["high", "low"]).optional(),
 });
+
+export const gcpListInstancesInputSchema = z.object({
+  project: z.string().optional(),
+  zone: z.string().optional(),
+});
+
+export const gcpGetInstanceInputSchema = z.object({
+  project: z.string().optional(),
+  zone: z.string().min(1),
+  instance: z.string().min(1),
+});
+
 export type MemoryRememberInput = z.infer<typeof memoryRememberInputSchema>;
 export type MemoryRecallInput = z.infer<typeof memoryRecallInputSchema>;
 export type MemoryForgetInput = z.infer<typeof memoryForgetInputSchema>;

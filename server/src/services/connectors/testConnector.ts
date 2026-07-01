@@ -74,6 +74,18 @@ export async function testConnector(
         ? { ok: true, message: "ArgoCD connection successful" }
         : { ok: false, message: "ArgoCD connection failed" };
     }
+    case "gcp": {
+      if (!connector.config.projectId) {
+        return { ok: false, message: "Default project ID is required" };
+      }
+      try {
+        const { testGcpConnection } = await import("../gcp/client.js");
+        await testGcpConnection(workspaceId);
+        return { ok: true, message: "Google Cloud connection successful" };
+      } catch {
+        return { ok: false, message: "Google Cloud connection failed" };
+      }
+    }
     default:
       return { ok: false, message: "Unsupported connector" };
   }

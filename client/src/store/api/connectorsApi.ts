@@ -6,7 +6,8 @@ export type ConnectorType =
   | "slack"
   | "pagerduty"
   | "prometheus"
-  | "argocd";
+  | "argocd"
+  | "gcp";
 
 export interface ConnectorSummary {
   type: ConnectorType;
@@ -41,6 +42,12 @@ export const connectorsApi = baseApi.injectEndpoints({
     testConnector: builder.mutation<{ ok: boolean; message: string }, ConnectorType>({
       query: (type) => ({ url: `/connectors/${type}/test`, method: "POST" }),
     }),
+    startGcpOAuth: builder.mutation<{ url: string }, { projectId: string }>({
+      query: ({ projectId }) => ({
+        url: `/connectors/gcp/oauth/start?projectId=${encodeURIComponent(projectId)}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -49,4 +56,5 @@ export const {
   useUpsertConnectorMutation,
   useDeleteConnectorMutation,
   useTestConnectorMutation,
+  useStartGcpOAuthMutation,
 } = connectorsApi;

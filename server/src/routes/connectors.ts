@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { connectorTypes, Connector } from "../db/models/Connector.js";
 import {
   connectorTypeParamSchema,
@@ -8,8 +9,62 @@ import { sessionAuthMiddleware, requireSessionAdmin } from "../middleware/sessio
 import { encryptSecret, isEncryptionConfigured } from "../utils/encryption.js";
 import { testConnector } from "../services/connectors/testConnector.js";
 import { invalidateConnectorCache } from "../services/connectors/connectorSecrets.js";
+import {
+  buildGcpOAuthUrl,
+  gcpOAuthClientRedirectUrl,
+  handleGcpOAuthCallback,
+  isGcpOAuthConfigured,
+} from "../services/gcp/oauth.js";
 
 export const connectorsRouter = Router();
+
+const gcpOAuthStartQuerySchema = z.object({
+  projectId: z.string().min(1),
+});
+
+connectorsRouter.get(
+  "/connectors/gcp/oauth/start",
+  sessionAuthMiddleware,
+  requireSessionAdmin,
+  (req, res) => {
+    if (!isGcpOAuthConfigured()) {
+      res.status(503).json({ error: "Google Cloud OAuth is not configured" });
+      return;
+    }
+
+    const parsed = gcpOAuthStartQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "projectId query parameter is required" });
+      return;
+    }
+
+    const workspaceId = req.session!.workspace._id.toString();
+    const url = buildGcpOAuthUrl(workspaceId, parsed.data.projectId);
+    if (!url) {
+      res.status(503).json({ error: "Google Cloud OAuth is not configured" });
+      return;
+    }
+
+    res.json({ url });
+  },
+);
+
+// SECURITY-REVIEW: OAuth callback exchanges code for GCP tokens and stores encrypted credentials
+connectorsRouter.get("/connectors/gcp/oauth/callback", async (req, res) => {
+  try {
+    const code = req.query.code;
+    const state = req.query.state;
+    if (typeof code !== "string" || typeof state !== "string") {
+      res.redirect(gcpOAuthClientRedirectUrl("error"));
+      return;
+    }
+
+    await handleGcpOAuthCallback(code, state);
+    res.redirect(gcpOAuthClientRedirectUrl("connected"));
+  } catch {
+    res.redirect(gcpOAuthClientRedirectUrl("error"));
+  }
+});
 
 connectorsRouter.get("/connectors", sessionAuthMiddleware, async (req, res, next) => {
   try {

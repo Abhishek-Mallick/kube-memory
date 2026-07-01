@@ -47,6 +47,9 @@ export function registerPlatformTools(server: McpServer): void {
             integrations.kubernetes?.enabled || kubernetesFallback
               ? "Use k8s_pod_logs and k8s_get_events."
               : "Connect Kubernetes in the kube-memory dashboard.",
+          gcp: integrations.gcp?.enabled
+            ? "Use gcp_list_instances and gcp_get_instance for Compute Engine VMs."
+            : "Connect Google Cloud in the kube-memory dashboard.",
         },
         instructions: MCP_SERVER_INSTRUCTIONS,
       });
