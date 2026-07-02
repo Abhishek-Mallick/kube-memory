@@ -86,6 +86,33 @@ export async function testConnector(
         return { ok: false, message: "Google Cloud connection failed" };
       }
     }
+    case "linear": {
+      const res = await fetch("https://api.linear.app/graphql", {
+        method: "POST",
+        headers: {
+          Authorization: secret,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: "{ viewer { id name } }" }),
+      });
+      if (!res.ok) return { ok: false, message: "Linear authentication failed" };
+      const data = (await res.json()) as { errors?: unknown[]; data?: { viewer?: unknown } };
+      if (data.errors?.length || !data.data?.viewer) {
+        return { ok: false, message: "Linear authentication failed" };
+      }
+      return { ok: true, message: "Linear connection successful" };
+    }
+    case "notion": {
+      const res = await fetch("https://api.notion.com/v1/users/me", {
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Notion-Version": "2022-06-28",
+        },
+      });
+      return res.ok
+        ? { ok: true, message: "Notion connection successful" }
+        : { ok: false, message: "Notion authentication failed" };
+    }
     default:
       return { ok: false, message: "Unsupported connector" };
   }

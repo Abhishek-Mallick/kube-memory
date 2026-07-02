@@ -317,6 +317,53 @@ export const gcpQueryMetricsInputSchema =
       .max(1000)
       .optional(),
   });
+
+export const linearListIssuesInputSchema = z.object({
+  teamId: z.string().optional(),
+  state: z.enum(["backlog", "unstarted", "started", "completed", "canceled"]).optional(),
+  assigneeId: z.string().optional(),
+  projectId: z.string().optional(),
+  first: z.number().int().min(1).max(100).optional(),
+});
+
+export const linearGetIssueInputSchema = z.object({
+  issueId: z.string().min(1),
+});
+
+export const linearSearchIssuesInputSchema = z.object({
+  query: z.string().min(1),
+  teamId: z.string().optional(),
+  first: z.number().int().min(1).max(50).optional(),
+});
+
+export const linearListProjectsInputSchema = z.object({
+  teamId: z.string().optional(),
+  first: z.number().int().min(1).max(100).optional(),
+});
+
+export const notionSearchInputSchema = z.object({
+  query: z.string().optional(),
+  filter: z.enum(["page", "database"]).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
+});
+
+export const notionGetPageInputSchema = z.object({
+  pageId: z.string().min(1),
+  includeBlocks: z.boolean().optional(),
+});
+
+export const notionListDatabasesInputSchema = z.object({
+  query: z.string().optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
+});
+
+export const notionQueryDatabaseInputSchema = z.object({
+  databaseId: z.string().optional(),
+  filter: z.record(z.string(), z.unknown()).optional(),
+  sorts: z.array(z.record(z.string(), z.unknown())).optional(),
+  pageSize: z.number().int().min(1).max(100).optional(),
+});
+
 export type MemoryRememberInput = z.infer<typeof memoryRememberInputSchema>;
 export type MemoryRecallInput = z.infer<typeof memoryRecallInputSchema>;
 export type MemoryForgetInput = z.infer<typeof memoryForgetInputSchema>;

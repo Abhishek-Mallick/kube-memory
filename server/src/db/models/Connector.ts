@@ -8,6 +8,8 @@ export const connectorTypes = [
   "prometheus",
   "argocd",
   "gcp",
+  "linear",
+  "notion",
 ] as const;
 
 export type ConnectorType = (typeof connectorTypes)[number];

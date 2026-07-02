@@ -45,6 +45,13 @@ export async function connectorFetch(
     case "argocd":
       if (secret) headers.set("Authorization", `Bearer ${secret}`);
       break;
+    case "linear":
+      headers.set("Authorization", secret);
+      break;
+    case "notion":
+      headers.set("Authorization", `Bearer ${secret}`);
+      headers.set("Notion-Version", "2022-06-28");
+      break;
     default:
       break;
   }

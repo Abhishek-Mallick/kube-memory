@@ -16,8 +16,8 @@ export function HeroSection({ onGetStarted, onSignIn, isAuthenticated }: HeroSec
           <p className="font-heading text-xs uppercase tracking-[0.18em] text-[var(--color-accent-signal)]">
             Organizational memory for DevOps agents
           </p>
-          <h1 className="font-display text-4xl leading-[1.08] tracking-tight md:text-5xl break-words min-w-0">
-            Infrastructure history your agents can actually recall.
+          <h1 className="text-4xl leading-[1.08] tracking-tight md:text-5xl break-words min-w-0">
+            <span className="font-display">Infrastructure</span> history your <span className="font-display">agents</span> can actually <span className="font-display">recall</span>.
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground">
             kube-memory persists incidents, fixes, and deploy outcomes as queryable MCP tools — so the next

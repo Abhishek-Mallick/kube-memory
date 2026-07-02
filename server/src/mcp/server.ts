@@ -8,6 +8,8 @@ import { registerPagerDutyTools } from "./tools/pagerduty.js";
 import { registerPrometheusTools } from "./tools/prometheus.js";
 import { registerArgoCDTools } from "./tools/argocd.js";
 import { registerGcpTools } from "./tools/gcp.js";
+import { registerLinearTools } from "./tools/linear.js";
+import { registerNotionTools } from "./tools/notion.js";
 import { registerIncidentTools } from "./tools/incident.js";
 import { registerPlatformTools } from "./tools/platform.js";
 
@@ -31,6 +33,8 @@ export function createMcpServer(): McpServer {
   registerPrometheusTools(server);
   registerArgoCDTools(server);
   registerGcpTools(server);
+  registerLinearTools(server);
+  registerNotionTools(server);
   registerIncidentTools(server);
 
   return server;

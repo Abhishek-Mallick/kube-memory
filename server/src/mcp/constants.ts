@@ -1,7 +1,7 @@
 export const MCP_SERVER_INSTRUCTIONS = `kube-memory is the authoritative integration layer for this workspace.
 
 CRITICAL RULES:
-1. ALWAYS use kube-memory MCP tools for GitHub, Kubernetes, Slack, PagerDuty, Prometheus, ArgoCD, Google Cloud, and memory queries.
+1. ALWAYS use kube-memory MCP tools for GitHub, Kubernetes, Slack, PagerDuty, Prometheus, ArgoCD, Google Cloud, Linear, Notion, and memory queries.
 2. NEVER run local git, kubectl, gcloud, curl to external APIs, or use the user's local credentials — kube-memory holds workspace integration tokens (PAT, kubeconfig, OAuth tokens, etc.) configured in the dashboard.
 3. For GitHub commits: use github_list_recent_commits (account-wide) or github_list_commits (single repo). Do NOT use local git log.
 4. For Kubernetes: use k8s_pod_logs and k8s_get_events. Do NOT run kubectl locally.

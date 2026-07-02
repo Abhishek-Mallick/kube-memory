@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { AppLogo } from "@/components/AppLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { ConnectorIcon } from "@/components/dashboard/ConnectorIcon";
@@ -17,7 +18,7 @@ import "@/styles/landing.css";
 type ToolGroup = {
   id: string;
   label: string;
-  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd" | "gcp";
+  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd" | "gcp" | "linear" | "notion";
   tools: Array<{ name: string; description: string; params: string; role?: string }>;
 };
 
@@ -322,6 +323,65 @@ const toolGroups: ToolGroup[] = [
       },
     ],
   },
+  {
+    id: "linear",
+    label: "Linear",
+    connector: "linear",
+    tools: [
+      {
+        name: "linear_list_teams",
+        description: "List teams accessible to the configured API key.",
+        params: "(none)",
+      },
+      {
+        name: "linear_list_issues",
+        description: "List issues filtered by team, state, assignee, or project.",
+        params: "teamId, state, assigneeId, projectId, first",
+      },
+      {
+        name: "linear_get_issue",
+        description: "Fetch a single issue by UUID or identifier (e.g. ENG-123).",
+        params: "issueId (required)",
+      },
+      {
+        name: "linear_search_issues",
+        description: "Full-text search across Linear issues.",
+        params: "query (required), teamId, first",
+      },
+      {
+        name: "linear_list_projects",
+        description: "List projects, optionally scoped to a team.",
+        params: "teamId, first",
+      },
+    ],
+  },
+  {
+    id: "notion",
+    label: "Notion",
+    connector: "notion",
+    tools: [
+      {
+        name: "notion_search",
+        description: "Search pages and databases shared with the integration.",
+        params: "query, filter (page|database), pageSize",
+      },
+      {
+        name: "notion_get_page",
+        description: "Fetch a Notion page by ID, optionally including block children.",
+        params: "pageId (required), includeBlocks",
+      },
+      {
+        name: "notion_list_databases",
+        description: "List databases shared with the integration.",
+        params: "query, pageSize",
+      },
+      {
+        name: "notion_query_database",
+        description: "Query a Notion database with optional filter and sort.",
+        params: "databaseId, filter, sorts, pageSize",
+      },
+    ],
+  },
 ];
 
 const allTools = toolGroups.flatMap((g) => g.tools);
@@ -459,13 +519,45 @@ const connectorSetup = [
     dashboardFields: "Default project ID (required), OAuth via Google sign-in",
     demoPrompt: "List Compute Engine instances, Storage buckets, or logs in my project — any GCP resource in a bad state during this incident?",
   },
+  {
+    type: "linear" as const,
+    title: "Linear",
+    credential: "Personal API key + optional default team ID",
+    tools: "linear_list_teams, linear_list_issues, linear_get_issue, linear_search_issues, linear_list_projects",
+    priority: "Optional — link incidents to tickets and sprint context",
+    webhook: false,
+    steps: [
+      "Linear → Settings → Security & access → Personal API keys → create a key.",
+      "Optional: copy a team ID from linear_list_teams or the Linear URL and set it as the default team in the dashboard.",
+      "Dashboard → Integrations → Linear → paste API key → Test → Save → Enable.",
+      "Use linear_search_issues or linear_get_issue during incident triage to find related tickets.",
+    ],
+    dashboardFields: "API key (secret, required), Default team ID (optional)",
+    demoPrompt: "Find Linear issues related to this OOM incident — any open bugs on the same service?",
+  },
+  {
+    type: "notion" as const,
+    title: "Notion",
+    credential: "Internal integration token + optional default database ID",
+    tools: "notion_search, notion_get_page, notion_list_databases, notion_query_database",
+    priority: "Optional — runbooks and incident documentation",
+    webhook: false,
+    steps: [
+      "Go to notion.so/my-integrations → New integration → copy the Internal Integration Secret.",
+      "Share relevant pages and databases with the integration (⋯ → Connect to → your integration).",
+      "Optional: set a default database ID for notion_query_database when you do not pass databaseId.",
+      "Dashboard → Integrations → Notion → paste integration token → Test → Save → Enable.",
+    ],
+    dashboardFields: "Integration token (secret, required), Default database ID (optional)",
+    demoPrompt: "Search Notion for the payment-service runbook — what are the rollback steps?",
+  },
 ];
 
 const futureConnectors = [
   { name: "Grafana", why: "Dashboard links and alert annotations alongside Prometheus metrics" },
   { name: "Loki / Elasticsearch", why: "Cluster-wide log search beyond single-pod tail" },
   { name: "Helm", why: "Chart revision diffing for deploy forensics" },
-  { name: "Jira / Linear", why: "Link incidents to tickets and sprint context" },
+  { name: "Jira", why: "Link incidents to tickets and sprint context" },
   { name: "Sentry", why: "App errors tied to deploy episodes" },
   { name: "Datadog / New Relic", why: "APM traces for post-deploy regressions" },
   { name: "Cloud APIs (AWS/Azure)", why: "Node pool and managed service state during infra incidents" },
@@ -574,9 +666,7 @@ export function DocsPage() {
     <div className="landing-shell">
       <nav className="landing-nav">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="font-heading text-sm font-medium tracking-tight hover:opacity-80">
-            kube-memory
-          </Link>
+          <AppLogo />
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
@@ -590,14 +680,14 @@ export function DocsPage() {
       </nav>
 
       <div className="landing-section">
-        <div className="mx-auto max-w-4xl space-y-4">
+        <div className="space-y-4">
           <h1 className="font-display text-4xl tracking-tight md:text-5xl">Documentation</h1>
           <p className="text-lg text-muted-foreground">
             All DevOps actions flow through the MCP server — connect integrations in the dashboard, then call tools from your IDE.
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="mx-auto mt-12 max-w-4xl">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-12 w-full">
           <TabsList className="mb-8 h-9 w-fit flex-wrap">
             <TabsTrigger value="setup">Getting started</TabsTrigger>
             <TabsTrigger value="connectors">Integrations</TabsTrigger>
@@ -780,23 +870,25 @@ export function DocsPage() {
 
           <TabsContent value="tools" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-              <div className="flex flex-col gap-3">
+              <Accordion
+                type="single"
+                collapsible
+                value={activeGroup}
+                onValueChange={(value) => {
+                  if (value) selectGroup(value);
+                }}
+                className="gap-1"
+              >
                 {toolGroups.map((g) => (
-                  <div key={g.id}>
-                    <button
-                      type="button"
-                      onClick={() => selectGroup(g.id)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors ${
-                        activeGroup === g.id
-                          ? "bg-[var(--color-accent-signal-muted)] text-foreground"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {g.connector ? <ConnectorIcon type={g.connector} className="size-4" /> : null}
-                      {g.label}
-                    </button>
-                    {activeGroup === g.id && (
-                      <div className="mt-1 flex flex-col gap-0.5 pl-2">
+                  <AccordionItem key={g.id} value={g.id} className="border-none">
+                    <AccordionTrigger className="items-center px-2 py-2 hover:no-underline [&>svg]:size-3.5">
+                      <span className="flex items-center gap-2 text-xs font-medium">
+                        {g.connector ? <ConnectorIcon type={g.connector} className="size-4" /> : null}
+                        {g.label}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-1">
+                      <div className="flex flex-col gap-0.5 pl-2">
                         {g.tools.map((tool) => (
                           <button
                             key={tool.name}
@@ -812,10 +904,10 @@ export function DocsPage() {
                           </button>
                         ))}
                       </div>
-                    )}
-                  </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 ))}
-              </div>
+              </Accordion>
               <div className="rounded-xl border bg-card p-5">
                 <h3 className="font-mono text-sm font-medium">{selected.name}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{selected.description}</p>

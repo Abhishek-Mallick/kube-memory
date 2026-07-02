@@ -43,7 +43,6 @@ interface ConnectorMeta {
   type: ConnectorType;
   title: string;
   description: string;
-  badge?: "core";
   authMethod?: "credentials" | "oauth";
   tools: string[];
   docsLink?: string;
@@ -55,7 +54,6 @@ const CONNECTORS: ConnectorMeta[] = [
     type: "kubernetes",
     title: "Kubernetes",
     description: "Read pod logs and cluster events via MCP.",
-    badge: "core",
     tools: ["k8s_pod_logs", "k8s_get_events"],
     fields: [{ key: "secret", label: "Kubeconfig YAML", type: "textarea", placeholder: "Paste kubeconfig…", required: true }],
   },
@@ -173,6 +171,39 @@ const CONNECTORS: ConnectorMeta[] = [
     ],
     fields: [
       { key: "projectId", label: "Default project ID", type: "text", placeholder: "my-gcp-project", required: true },
+    ],
+  },
+  {
+    type: "linear",
+    title: "Linear",
+    description: "Query teams, issues, and projects for incident ticket context.",
+    docsLink: "/docs?tab=connectors&connector=linear",
+    tools: [
+      "linear_list_teams",
+      "linear_list_issues",
+      "linear_get_issue",
+      "linear_search_issues",
+      "linear_list_projects",
+    ],
+    fields: [
+      { key: "secret", label: "API key", type: "secret", required: true },
+      { key: "teamId", label: "Default team ID", type: "text", placeholder: "team-uuid" },
+    ],
+  },
+  {
+    type: "notion",
+    title: "Notion",
+    description: "Search pages and databases for runbooks and incident docs.",
+    docsLink: "/docs?tab=connectors&connector=notion",
+    tools: [
+      "notion_search",
+      "notion_get_page",
+      "notion_list_databases",
+      "notion_query_database",
+    ],
+    fields: [
+      { key: "secret", label: "Integration token", type: "secret", required: true },
+      { key: "defaultDatabaseId", label: "Default database ID", type: "text", placeholder: "database-uuid" },
     ],
   },
 ];
@@ -409,7 +440,7 @@ export function ConnectorsPage() {
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 7 }).map((_, i) => (
+          {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
@@ -423,8 +454,8 @@ export function ConnectorsPage() {
                 key={meta.type}
                 className="interactive-card flex flex-col rounded-xl p-5"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30 text-foreground">
                       <ConnectorIcon type={meta.type} className="size-5" />
                     </div>
@@ -433,11 +464,6 @@ export function ConnectorsPage() {
                         <h3 className="font-heading text-base font-medium">{meta.title}</h3>
                         <ConnectorDocsLink meta={meta} />
                       </div>
-                      {meta.badge === "core" && (
-                        <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-(--color-accent-signal)">
-                          Start here
-                        </p>
-                      )}
                     </div>
                   </div>
                   <StatusBadge status={status} />

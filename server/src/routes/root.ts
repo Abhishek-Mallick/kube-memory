@@ -146,6 +146,15 @@ export const MCP_TOOLS: McpToolEntry[] = [
   { name: "gcp_query_logs", role: "reader+", description: "Query Cloud Logging entries" },
   { name: "gcp_list_metric_descriptors", role: "reader+", description: "List available Cloud Monitoring metric descriptors" },
   { name: "gcp_query_metrics", role: "reader+", description: "Query Cloud Monitoring metrics" },
+  { name: "linear_list_teams", role: "reader+", description: "List Linear teams accessible to the API key" },
+  { name: "linear_list_issues", role: "reader+", description: "List Linear issues by team, state, assignee, or project" },
+  { name: "linear_get_issue", role: "reader+", description: "Fetch a Linear issue by UUID or identifier" },
+  { name: "linear_search_issues", role: "reader+", description: "Full-text search across Linear issues" },
+  { name: "linear_list_projects", role: "reader+", description: "List Linear projects" },
+  { name: "notion_search", role: "reader+", description: "Search Notion pages and databases" },
+  { name: "notion_get_page", role: "reader+", description: "Fetch a Notion page by ID" },
+  { name: "notion_list_databases", role: "reader+", description: "List Notion databases shared with the integration" },
+  { name: "notion_query_database", role: "reader+", description: "Query a Notion database with optional filter and sort" },
 ];
 
 export const CONNECTOR_TYPES = [
@@ -156,6 +165,8 @@ export const CONNECTOR_TYPES = [
   "prometheus",
   "argocd",
   "gcp",
+  "linear",
+  "notion",
 ] as const;
 
 function escapeHtml(value: string): string {

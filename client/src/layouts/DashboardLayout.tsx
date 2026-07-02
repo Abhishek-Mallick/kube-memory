@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { RootState } from "@/store";
 import { useLogoutMutation } from "@/store/api/authApi";
+import { AppLogo } from "@/components/AppLogo";
 import { SetupJourney } from "@/components/dashboard/SetupJourney";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import "@/styles/dashboard.css";
@@ -34,9 +35,7 @@ export function DashboardLayout() {
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-6">
-            <Link to="/" className="font-heading shrink-0 text-sm font-medium tracking-tight hover:opacity-80">
-              kube-memory
-            </Link>
+            <AppLogo className="shrink-0" />
             <nav className="hidden items-center gap-1 sm:flex" aria-label="Dashboard">
               {navItems.map((item) => {
                 const active = isNavActive(location.pathname, item.href, item.exact);

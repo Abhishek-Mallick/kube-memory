@@ -7,6 +7,7 @@ import { AuthDialog } from "@/components/auth/AuthDialog";
 import { BentoFeatureGrid } from "@/components/landing/BentoFeatureGrid";
 import { HeroSection } from "@/components/landing/HeroSection";
 import type { RootState } from "@/store";
+import { AppLogo } from "@/components/AppLogo";
 import "@/styles/landing.css";
 
 export function LandingPage() {
@@ -29,9 +30,7 @@ export function LandingPage() {
     <div className="landing-shell">
       <nav className="landing-nav">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="font-heading text-sm font-medium tracking-tight hover:opacity-80">
-            kube-memory
-          </Link>
+          <AppLogo />
           <div className="hidden items-center gap-6 text-sm md:flex">
             <a href="#features" className="landing-nav-link">
               Features

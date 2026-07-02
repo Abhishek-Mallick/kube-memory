@@ -7,7 +7,9 @@ export type ConnectorType =
   | "pagerduty"
   | "prometheus"
   | "argocd"
-  | "gcp";
+  | "gcp"
+  | "linear"
+  | "notion";
 
 export interface ConnectorSummary {
   type: ConnectorType;

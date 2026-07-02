@@ -7,6 +7,8 @@ import kubernetesLogo from "@/assets/images/Kubernetes.png";
 import pagerdutyLogo from "@/assets/images/Pagerduty.png";
 import prometheusLogo from "@/assets/images/Prometheus.png";
 import slackLogo from "@/assets/images/Slack.png";
+import linearLogo from "@/assets/images/linear.png";
+import notionLogo from "@/assets/images/notion.png";
 
 interface ConnectorIconProps {
   type: ConnectorType;
@@ -21,6 +23,8 @@ const CONNECTOR_LOGOS: Record<ConnectorType, string> = {
   prometheus: prometheusLogo,
   argocd: argocdLogo,
   gcp: googleCloudLogo,
+  linear: linearLogo,
+  notion: notionLogo,
 };
 
 export function ConnectorIcon({ type, className }: ConnectorIconProps) {
