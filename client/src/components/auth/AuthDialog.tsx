@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { GithubIcon } from "@hugeicons/core-free-icons";
+import githublogo from "@/assets/images/GitHub.png"
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -178,7 +177,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
 
           <Button variant="outline" className="w-full gap-2" size="lg" asChild>
             <a href={getGitHubAuthUrl()}>
-              <HugeiconsIcon icon={GithubIcon} strokeWidth={2} className="size-4" />
+              <img src={githublogo} alt="GitHub" className="w-4 h-4 dark:invert" />
               Continue with GitHub
             </a>
           </Button>
