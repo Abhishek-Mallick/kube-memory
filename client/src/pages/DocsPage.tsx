@@ -66,6 +66,23 @@ const toolGroups: ToolGroup[] = [
         description: "List cluster or namespace events for debugging.",
         params: "namespace, fieldSelector",
       },
+      {
+        name: "k8s_get_pod",
+        description: "Get pod phase, conditions, and container state (OOMKilled detection).",
+        params: "name (required), namespace",
+      },
+      {
+        name: "k8s_apply_manifest",
+        description: "Apply YAML manifest(s) to the cluster (create or replace).",
+        params: "manifest (required), namespace, dryRun",
+        role: "admin",
+      },
+      {
+        name: "k8s_delete_pod",
+        description: "Delete a pod in a namespace.",
+        params: "name (required), namespace",
+        role: "admin",
+      },
     ],
   },
   {
@@ -391,7 +408,7 @@ const connectorSetup = [
     type: "kubernetes" as const,
     title: "Kubernetes",
     credential: "Kubeconfig YAML",
-    tools: "k8s_pod_logs, k8s_get_events",
+    tools: "k8s_apply_manifest, k8s_get_pod, k8s_delete_pod, k8s_pod_logs, k8s_get_events",
     priority: "Required — core of kube-memory",
     webhook: false,
     steps: [
@@ -952,6 +969,19 @@ export function DocsPage() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <h3 className="font-heading font-medium">Cursor commands</h3>
+              <p className="text-sm text-muted-foreground">
+                Project slash commands live in <code className="font-mono text-xs">.cursor/commands/</code>. Type{" "}
+                <code className="font-mono text-xs">/kube-deploy</code> in Agent chat to run the full deploy → monitor → incident workflow using kube-memory MCP only.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Example: <code className="font-mono text-xs">/kube-deploy @docs/k8s-test/oom-payment-simulator.yaml</code>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Requires admin API key, Kubernetes connector enabled, and optionally Slack, PagerDuty, GitHub, and Prometheus for the failure path.
+              </p>
+            </div>
             <p className="text-xs text-muted-foreground">
               Endpoint: <code className="font-mono">{getMcpEndpointUrl()}</code>
             </p>

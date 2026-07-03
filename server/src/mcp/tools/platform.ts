@@ -45,7 +45,7 @@ export function registerPlatformTools(server: McpServer): void {
             : "Connect GitHub in the kube-memory dashboard.",
           kubernetes:
             integrations.kubernetes?.enabled || kubernetesFallback
-              ? "Use k8s_pod_logs and k8s_get_events."
+              ? "Use k8s_apply_manifest, k8s_get_pod, k8s_delete_pod, k8s_pod_logs, and k8s_get_events."
               : "Connect Kubernetes in the kube-memory dashboard.",
           gcp: integrations.gcp?.enabled
             ? "Use gcp_list_instances and gcp_get_instance for Compute Engine VMs."

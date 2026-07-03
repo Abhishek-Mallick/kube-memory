@@ -643,6 +643,9 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `predict_risk` | reader+ | — | Score deploy risk from recall similarity |
 | `k8s_pod_logs` | reader+ | kubernetes | Read pod logs |
 | `k8s_get_events` | reader+ | kubernetes | List cluster/namespace events |
+| `k8s_get_pod` | reader+ | kubernetes | Get pod status and container state |
+| `k8s_apply_manifest` | admin | kubernetes | Apply YAML manifest to cluster |
+| `k8s_delete_pod` | admin | kubernetes | Delete a pod in a namespace |
 | `github_list_issues` | reader+ | github | List GitHub issues for a repo |
 | `github_list_pull_requests` | reader+ | github | List pull requests |
 | `github_list_commits` | reader+ | github | List commits on a branch or path |
@@ -842,7 +845,35 @@ Either `episode` or `text` is required.
 }
 ```
 
-Kubernetes tools use the workspace **kubernetes** connector kubeconfig when configured; otherwise they fall back to `KUBECONFIG_BASE64`.
+#### `k8s_get_pod`
+
+```json
+{
+  "name": "payment-simulator",
+  "namespace": "kube-memory-test"
+}
+```
+
+#### `k8s_apply_manifest`
+
+```json
+{
+  "manifest": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: payment-simulator\n  namespace: kube-memory-test\n...",
+  "namespace": "kube-memory-test",
+  "dryRun": false
+}
+```
+
+#### `k8s_delete_pod`
+
+```json
+{
+  "name": "payment-simulator-old",
+  "namespace": "kube-memory-test"
+}
+```
+
+Kubernetes tools use the workspace **kubernetes** connector kubeconfig when configured; otherwise they fall back to `KUBECONFIG_BASE64`. Write tools (`k8s_apply_manifest`, `k8s_delete_pod`) require **admin** API key role.
 
 #### GitHub tools
 

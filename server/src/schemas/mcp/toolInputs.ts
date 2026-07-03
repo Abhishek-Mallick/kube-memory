@@ -39,6 +39,22 @@ export const k8sGetEventsInputSchema = z.object({
   fieldSelector: z.string().optional(),
 });
 
+export const k8sApplyManifestInputSchema = z.object({
+  manifest: z.string().min(1),
+  namespace: z.string().optional(),
+  dryRun: z.boolean().optional(),
+});
+
+export const k8sGetPodInputSchema = z.object({
+  name: z.string().min(1),
+  namespace: z.string().optional(),
+});
+
+export const k8sDeletePodInputSchema = z.object({
+  name: z.string().min(1),
+  namespace: z.string().optional(),
+});
+
 export const githubListIssuesInputSchema = z.object({
   owner: z.string().min(1).optional(),
   repo: z.string().min(1),

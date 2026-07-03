@@ -1,6 +1,8 @@
 import * as k8s from "@kubernetes/client-node";
 import { getEnv } from "../../config/env.js";
 import { getConnectorSecret } from "../connectors/connectorSecrets.js";
+import { applyManifest as applyManifestDocs, type ApplyManifestResult } from "./applyManifest.js";
+import { summarizePodStatus, type PodStatusSummary } from "./podStatus.js";
 
 let globalKubeConfig: k8s.KubeConfig | null = null;
 
@@ -21,6 +23,30 @@ function loadGlobalKubeConfig(): k8s.KubeConfig {
   return kc;
 }
 
+async function resolveKubeConfig(workspaceId?: string): Promise<k8s.KubeConfig | null> {
+  if (workspaceId) {
+    const connector = await getConnectorSecret(workspaceId, "kubernetes");
+    if (connector?.secret) {
+      const kc = new k8s.KubeConfig();
+      kc.loadFromString(connector.secret);
+      return kc;
+    }
+  }
+
+  const encoded = getEnv().KUBECONFIG_BASE64;
+  if (encoded) {
+    const kc = new k8s.KubeConfig();
+    kc.loadFromString(Buffer.from(encoded, "base64").toString("utf8"));
+    return kc;
+  }
+
+  try {
+    return loadGlobalKubeConfig();
+  } catch {
+    return null;
+  }
+}
+
 export function getCoreV1ApiForKubeconfig(kubeconfigYaml: string): k8s.CoreV1Api {
   const kc = new k8s.KubeConfig();
   kc.loadFromString(kubeconfigYaml);
@@ -28,23 +54,13 @@ export function getCoreV1ApiForKubeconfig(kubeconfigYaml: string): k8s.CoreV1Api
 }
 
 async function resolveCoreV1Api(workspaceId?: string): Promise<k8s.CoreV1Api | null> {
-  if (workspaceId) {
-    const connector = await getConnectorSecret(workspaceId, "kubernetes");
-    if (connector?.secret) {
-      return getCoreV1ApiForKubeconfig(connector.secret);
-    }
-  }
+  const kc = await resolveKubeConfig(workspaceId);
+  return kc ? kc.makeApiClient(k8s.CoreV1Api) : null;
+}
 
-  const encoded = getEnv().KUBECONFIG_BASE64;
-  if (encoded) {
-    return getCoreV1ApiForKubeconfig(Buffer.from(encoded, "base64").toString("utf8"));
-  }
-
-  try {
-    return loadGlobalKubeConfig().makeApiClient(k8s.CoreV1Api);
-  } catch {
-    return null;
-  }
+async function resolveObjectApi(workspaceId?: string): Promise<k8s.KubernetesObjectApi | null> {
+  const kc = await resolveKubeConfig(workspaceId);
+  return kc ? k8s.KubernetesObjectApi.makeApiClient(kc) : null;
 }
 
 export function isKubernetesConfigured(): boolean {
@@ -67,6 +83,54 @@ export async function getPod(options: {
 
   const namespace = options.namespace ?? "default";
   return api.readNamespacedPod({ name: options.name, namespace });
+}
+
+export async function getPodStatus(options: {
+  name: string;
+  namespace?: string;
+  workspaceId?: string;
+}): Promise<PodStatusSummary> {
+  const pod = await getPod(options);
+  return summarizePodStatus(pod);
+}
+
+export async function deletePod(options: {
+  name: string;
+  namespace?: string;
+  workspaceId?: string;
+}): Promise<{ deleted: boolean; name: string; namespace: string }> {
+  const objectApi = await resolveObjectApi(options.workspaceId);
+  if (!objectApi) {
+    throw new Error("Kubernetes is not configured");
+  }
+
+  const namespace = options.namespace ?? "default";
+  await objectApi.delete({
+    apiVersion: "v1",
+    kind: "Pod",
+    metadata: { name: options.name, namespace },
+  });
+
+  return { deleted: true, name: options.name, namespace };
+}
+
+export async function applyManifest(options: {
+  manifestYaml: string;
+  namespace?: string;
+  dryRun?: boolean;
+  workspaceId?: string;
+}): Promise<ApplyManifestResult> {
+  const objectApi = await resolveObjectApi(options.workspaceId);
+  if (!objectApi) {
+    throw new Error("Kubernetes is not configured");
+  }
+
+  return applyManifestDocs({
+    manifestYaml: options.manifestYaml,
+    namespace: options.namespace,
+    dryRun: options.dryRun,
+    objectApi,
+  });
 }
 
 export async function getPodLogs(options: {
@@ -114,3 +178,5 @@ export async function listEvents(options: {
   });
   return response.items ?? [];
 }
+
+export type { ApplyManifestResult, PodStatusSummary };
