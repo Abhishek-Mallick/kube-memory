@@ -67,7 +67,7 @@ After creating an API key in the dashboard:
 }
 ```
 
-Restart your editor. See [usage.md](../usage.md) for the full setup journey and tool reference.
+Restart your editor. See [mcp-tools.md](./mcp-tools.md) and the dashboard **Documentation** page (`/docs`) for the full tool catalog and workflows.
 
 ## Optional client overrides
 

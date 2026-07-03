@@ -488,5 +488,5 @@ Use [test-k8.md](./test-k8.md) Track A for kind + local server learning. Use **t
 
 - [test-k8.md](./test-k8.md) — detailed K8s scenarios + kind local track
 - [demo-environment.md](./demo-environment.md) — full multi-connector topology
-- [usage.md](../usage.md) — MCP tool reference
+- [mcp-tools.md](./mcp-tools.md) — MCP tool reference
 - [server/API_DOC.md](../server/API_DOC.md) — REST API for `/ingest` and connectors

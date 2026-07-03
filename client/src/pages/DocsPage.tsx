@@ -24,6 +24,18 @@ type ToolGroup = {
 
 const toolGroups: ToolGroup[] = [
   {
+    id: "platform",
+    label: "Platform",
+    tools: [
+      {
+        name: "kube_memory_status",
+        description:
+          "List enabled integrations, workspace info, and hints. Call first when unsure which tools are available.",
+        params: "(none)",
+      },
+    ],
+  },
+  {
     id: "memory",
     label: "Memory",
     tools: [
@@ -431,19 +443,45 @@ const toolGroups: ToolGroup[] = [
   },
   {
     id: "deploy",
-    label: "Deploy",
+    label: "Deploy & incidents",
     connector: "kubernetes",
     tools: [
       {
         name: "kube_deploy",
-        description: "Full deploy → monitor → incident orchestrator (up to 5 min watch).",
-        params: "manifest (required), stableManifest, namespace, serviceName, githubOwner, githubRepo, slackChannel, triggerPagerDuty, watchDurationSec",
+        description:
+          "One-shot orchestrator: scan manifest → apply → watch (up to 5 min) → on failure: mitigate, incident_open, fix PR, replay, resolve. Returns actions[] and actionSummary. Cognee risk scoring is skipped if memory API is down — deploy continues.",
+        params:
+          "manifest (required), stableManifest, namespace, serviceName, githubOwner, githubRepo, slackChannel, triggerPagerDuty, watchDurationSec (30–600), pollIntervalSec, dryRun",
         role: "admin",
       },
       {
         name: "replay_impacted_traffic",
         description: "Replay HTTP health/order requests on stable services via in-cluster curl Job.",
         params: "namespace (required), requestsPerService, services[]",
+        role: "admin",
+      },
+      {
+        name: "incident_open",
+        description:
+          "Open incident: enrich from K8s/GitHub/Prometheus/ArgoCD, classify, persist, Slack/PagerDuty, optional memory.",
+        params:
+          "serviceName (required), namespace, podName, severity, githubOwner, githubRepo, notifySlack, slackChannel, triggerPagerDuty, rememberInMemory, impactedServices[]",
+        role: "admin",
+      },
+      {
+        name: "incident_get",
+        description: "Fetch a persisted incident by MongoDB ID.",
+        params: "incidentId (required)",
+      },
+      {
+        name: "incident_list",
+        description: "List incidents for the workspace with optional filters.",
+        params: "status, serviceName, limit",
+      },
+      {
+        name: "incident_update",
+        description: "Update incident status, add notes, post to Slack thread, optional resolution memory.",
+        params: "incidentId (required), status, note, fixPrUrl, notifySlack, rememberResolution",
         role: "admin",
       },
     ],
@@ -668,7 +706,7 @@ function mcpSnippet() {
   );
 }
 
-const DOC_TABS = ["setup", "connectors", "tools", "ide", "api"] as const;
+const DOC_TABS = ["setup", "connectors", "tools", "workflows", "ide", "api"] as const;
 type DocTab = (typeof DOC_TABS)[number];
 
 const CONNECTOR_TYPES = connectorSetup.map((c) => c.type);
@@ -758,6 +796,7 @@ export function DocsPage() {
             <TabsTrigger value="setup">Getting started</TabsTrigger>
             <TabsTrigger value="connectors">Integrations</TabsTrigger>
             <TabsTrigger value="tools">MCP tools</TabsTrigger>
+            <TabsTrigger value="workflows">Workflows</TabsTrigger>
             <TabsTrigger value="ide">IDE setup</TabsTrigger>
             <TabsTrigger value="api">REST API</TabsTrigger>
           </TabsList>
@@ -784,7 +823,7 @@ export function DocsPage() {
                   </a>
                 </li>
                 <li>
-                  <code className="font-mono text-xs">COGNEE_API_KEY</code> on the server for memory tools
+                  <code className="font-mono text-xs">COGNEE_API_KEY</code> on the server for memory tools (optional — deploy/incident workflows continue if Cognee is down)
                 </li>
                 <li>At least one integration connected and enabled before MCP tools work</li>
               </ul>
@@ -805,7 +844,7 @@ export function DocsPage() {
             <div className="rounded-xl border bg-card p-5 space-y-2">
               <h3 className="font-heading font-medium">Recommended setup order</h3>
               <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-                <li>Set <code className="font-mono text-xs">COGNEE_API_KEY</code> on the server → memory tools work</li>
+                <li>Set <code className="font-mono text-xs">COGNEE_API_KEY</code> on the server → memory tools (optional; deploy continues if Cognee is down)</li>
                 <li>Kubernetes → pod logs and events</li>
                 <li>Seed 2–3 incident episodes via MCP or <code className="font-mono text-xs">POST /ingest</code></li>
                 <li>Prometheus → metrics and firing alerts</li>
@@ -990,6 +1029,68 @@ export function DocsPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="workflows" className="space-y-6">
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <h3 className="font-heading font-medium">kube_deploy — one MCP call</h3>
+              <p className="text-sm text-muted-foreground">
+                The primary demo workflow. Requires <strong className="font-medium text-foreground">admin</strong> API key and Kubernetes enabled. Optionally Slack, GitHub (fix PR), PagerDuty, Prometheus.
+              </p>
+              <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
+                <li>Scan manifest + optional Cognee risk score (skipped if Cognee unreachable)</li>
+                <li>Apply YAML via <code className="font-mono text-xs">k8s_apply_manifest</code></li>
+                <li>Watch pod health for up to <code className="font-mono text-xs">watchDurationSec</code> (default 90s)</li>
+                <li>On failure: route traffic to stable, delete canary, open incident, create fix PR, replay traffic, resolve</li>
+              </ol>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cursor command</p>
+              <code className="code-block block text-xs whitespace-pre-wrap">
+                {`/kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml triggerPagerDuty=true watchDurationSec=90`}
+              </code>
+              <p className="text-xs text-muted-foreground">
+                <code className="font-mono">/kube-deploy</code> is a project slash command in{" "}
+                <code className="font-mono">.cursor/commands/</code> — it instructs the agent how to call the{" "}
+                <code className="font-mono">kube_deploy</code> MCP tool. The tool itself is always on the server.
+              </p>
+            </div>
+
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <h3 className="font-heading font-medium">incident_open — incident without deploy</h3>
+              <p className="text-sm text-muted-foreground">
+                Use when the failure already exists. Enriches from connected systems, classifies root cause, posts to Slack, optional PagerDuty.
+              </p>
+              <code className="code-block block text-xs">{`incident_open({ serviceName, namespace, podName, notifySlack: true, triggerPagerDuty: false })`}</code>
+            </div>
+
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <h3 className="font-heading font-medium">Manual loop</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="pb-2 pr-4 font-medium">Step</th>
+                      <th className="pb-2 font-medium">MCP tool</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono text-xs text-muted-foreground">
+                    <tr className="border-b"><td className="py-2 pr-4 text-foreground">Connectors</td><td className="py-2">kube_memory_status</td></tr>
+                    <tr className="border-b"><td className="py-2 pr-4 text-foreground">Detect</td><td className="py-2">k8s_get_pod, k8s_get_events, k8s_pod_logs</td></tr>
+                    <tr className="border-b"><td className="py-2 pr-4 text-foreground">Recall</td><td className="py-2">memory_recall, predict_risk</td></tr>
+                    <tr className="border-b"><td className="py-2 pr-4 text-foreground">Metrics</td><td className="py-2">prometheus_list_alerts, prometheus_query</td></tr>
+                    <tr className="border-b"><td className="py-2 pr-4 text-foreground">Incident</td><td className="py-2">incident_open → incident_update</td></tr>
+                    <tr><td className="py-2 pr-4 text-foreground">Remember</td><td className="py-2">memory_remember</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-card p-5 space-y-2">
+              <h3 className="font-heading font-medium">Local server for long watches</h3>
+              <p className="text-sm text-muted-foreground">
+                Run <code className="font-mono text-xs">cd server && npm run dev</code> and point MCP at{" "}
+                <code className="font-mono text-xs">http://localhost:3000/mcp</code>. Hosted API may timeout on 90s+ orchestration or kind clusters reachable only from your machine.
+              </p>
+            </div>
+          </TabsContent>
+
           <TabsContent value="ide" className="space-y-4">
             <Accordion type="single" collapsible defaultValue="cursor">
               <AccordionItem value="cursor">
@@ -1019,16 +1120,26 @@ export function DocsPage() {
               </AccordionItem>
             </Accordion>
             <div className="rounded-xl border bg-card p-5 space-y-3">
-              <h3 className="font-heading font-medium">Cursor commands</h3>
+              <h3 className="font-heading font-medium">Cursor slash commands</h3>
               <p className="text-sm text-muted-foreground">
-                Project slash commands live in <code className="font-mono text-xs">.cursor/commands/</code>. Type{" "}
-                <code className="font-mono text-xs">/kube-deploy</code> in Agent chat to run the full deploy → monitor → incident workflow using kube-memory MCP only.
+                Project commands live in <code className="font-mono text-xs">.cursor/commands/</code> in this repo. They are{" "}
+                <strong className="font-medium text-foreground">not</strong> served by the MCP server — they tell the agent how to use MCP tools.
               </p>
+              <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                <li>
+                  <code className="font-mono text-xs">/kube-deploy</code> — runs the full{" "}
+                  <code className="font-mono text-xs">kube_deploy</code> orchestrator (OOM demo)
+                </li>
+              </ul>
               <p className="text-sm text-muted-foreground">
-                Example: <code className="font-mono text-xs">/kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml</code>
+                Example:{" "}
+                <code className="font-mono text-xs">
+                  /kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml
+                </code>
               </p>
               <p className="text-xs text-muted-foreground">
-                Requires admin API key, Kubernetes connector enabled, and optionally Slack, PagerDuty, GitHub, and Prometheus for the failure path.
+                Requires admin API key. Without slash commands, ask the agent to call{" "}
+                <code className="font-mono text-xs">kube_deploy</code> directly with manifest YAML.
               </p>
             </div>
             <p className="text-xs text-muted-foreground">

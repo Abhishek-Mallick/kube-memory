@@ -98,6 +98,7 @@ export const API_SECTIONS: ApiSection[] = [
 ];
 
 export const MCP_TOOLS: McpToolEntry[] = [
+  { name: "kube_memory_status", role: "reader+", description: "List enabled integrations and workspace hints" },
   { name: "memory_remember", role: "admin", description: "Store incident, deployment, or fix in memory" },
   { name: "memory_recall", role: "reader+", description: "Semantic search over past episodes" },
   { name: "memory_forget", role: "admin", description: "Remove stale or sensitive memory" },
@@ -109,6 +110,10 @@ export const MCP_TOOLS: McpToolEntry[] = [
   { name: "k8s_delete_pod", role: "admin", description: "Delete a pod in a namespace" },
   { name: "kube_deploy", role: "admin", description: "Full deploy, monitor, and incident orchestrator" },
   { name: "replay_impacted_traffic", role: "admin", description: "Replay HTTP requests on stable services after outage" },
+  { name: "incident_open", role: "admin", description: "Open incident with enrichment and Slack/PagerDuty" },
+  { name: "incident_get", role: "reader+", description: "Fetch incident by ID" },
+  { name: "incident_list", role: "reader+", description: "List workspace incidents" },
+  { name: "incident_update", role: "admin", description: "Update incident status and notify Slack" },
   { name: "github_list_issues", role: "reader+", description: "List GitHub issues for a repository" },
   { name: "github_list_pull_requests", role: "reader+", description: "List GitHub pull requests" },
   { name: "github_list_commits", role: "reader+", description: "List commits on a branch or path" },

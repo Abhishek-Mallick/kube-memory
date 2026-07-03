@@ -360,4 +360,4 @@ Look for `connectors.kubernetes.mcpActive: true`.
 
 - [setup.md](./setup.md) — local dev env
 - [demo-environment.md](./demo-environment.md) — full multi-connector demo topology
-- [usage.md](../usage.md) — MCP tool reference
+- [mcp-tools.md](./mcp-tools.md) — MCP tool reference

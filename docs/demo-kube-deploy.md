@@ -71,7 +71,11 @@ curl -s http://localhost:8081/health  # if port-forward order-api
 
 | Issue | Fix |
 |-------|-----|
-| MCP timeout | Use local server, not prod Vercel |
+| MCP timeout | Use local server (`http://localhost:3000/mcp`), not prod Vercel |
+| `kube_deploy` failed at start with `fetch failed` | Cognee unreachable — update server: Cognee failures are skipped; restart `npm run dev` |
 | No fix PR | Set `PAYMENT_SERVICE_GITHUB_*` env; PAT needs repo write |
 | On-call not tagged | Update `docs/oncall-roster.csv` slack_user_id |
 | OOM too fast/slow | Tune `LEAK_DELAY_MS` in canary manifest |
+| Cognee recall empty | Optional — workflow continues; fix `COGNEE_API_KEY` / network for memory features |
+
+Full MCP reference: [mcp-tools.md](./mcp-tools.md)

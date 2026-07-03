@@ -75,13 +75,13 @@ The same memory graph agents use in the IDE is available at `https://kube.buildl
 3. Add kube-memory to your MCP config — endpoint `https://kube.buildlab.in/mcp`, key from the dashboard
 4. Ask your agent to recall past incidents, pull pod logs, check ArgoCD sync status, or score deploy risk
 
-Detailed walkthrough: [usage.md](./usage.md)
+Detailed walkthrough: [docs/mcp-tools.md](./docs/mcp-tools.md) · Interactive catalog: [dashboard Documentation](https://kube-memory.buildlab.in/docs)
 
 ---
 
 ## Deploy command (`/kube-deploy`)
 
-One Cursor slash command runs the full **deploy → monitor (5 min) → incident → fix PR → replay → resolve** loop via the `kube_deploy` MCP orchestrator.
+One Cursor slash command runs the full **deploy → monitor → incident → fix PR → replay → resolve** loop via the **`kube_deploy`** MCP orchestrator.
 
 ```
 /kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml
@@ -89,9 +89,11 @@ One Cursor slash command runs the full **deploy → monitor (5 min) → incident
 
 - **Demo app:** [`demos/payment-service/`](demos/payment-service/) — real HTTP payment-service + order-api with OOM canary
 - **Setup:** `./demos/payment-service/scripts/demo-setup.sh`
-- **Docs:** [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md)
+- **Docs:** [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md) · [docs/mcp-tools.md](./docs/mcp-tools.md)
 
 Requires admin `km_*` key, Kubernetes + Slack connectors; GitHub write PAT for automated fix PRs.
+
+**Cursor command vs MCP:** `/kube-deploy` lives in [`.cursor/commands/`](.cursor/commands/) — it instructs the agent how to call the `kube_deploy` tool. The tool is on the MCP server; the slash command is optional repo sugar for demos.
 
 ---
 
@@ -120,6 +122,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `k8s_delete_pod` | admin | Delete a pod |
 | `kube_deploy` | admin | Full deploy + monitor + incident orchestrator |
 | `replay_impacted_traffic` | admin | Replay HTTP on stable services after outage |
+| `incident_open` | admin | Open incident with enrichment + Slack/PagerDuty |
+| `incident_get` | reader+ | Fetch incident by ID |
+| `incident_list` | reader+ | List workspace incidents |
+| `incident_update` | admin | Update status and notify Slack |
 
 ### GitHub
 
@@ -375,7 +381,8 @@ API keys are role-scoped: **reader** tools are read-only; **admin** can write me
 
 | Document | Description |
 |----------|-------------|
-| [usage.md](./usage.md) | Setup journey, integrations, and MCP usage |
+| [docs/mcp-tools.md](./docs/mcp-tools.md) | MCP tool catalog, workflows, Cursor vs MCP |
+| [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md) | OOM deploy demo script |
 | [docs/setup.md](./docs/setup.md) | Local development setup |
 | [server/API_DOC.md](./server/API_DOC.md) | Complete REST and MCP API reference |
 | [server/.env.example](./server/.env.example) | Server configuration |

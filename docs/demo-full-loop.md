@@ -28,7 +28,7 @@ Setup: `./demos/payment-service/scripts/demo-setup.sh`
 | Prometheus | Recommended | Base URL (+ bearer if auth) |
 | ArgoCD | Optional | Base URL + API token |
 | PagerDuty | Optional | API key + `defaultServiceId` in config |
-| Cognee | Optional | `COGNEE_API_KEY` in `server/.env` for recall |
+| Cognee | Optional | `COGNEE_API_KEY` in `server/.env` for recall — **deploy/incident continue if Cognee is down** |
 
 ---
 

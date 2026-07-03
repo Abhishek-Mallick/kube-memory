@@ -28,6 +28,12 @@ Anything after `/kube-deploy` in the user message is additional context — use 
 
 ---
 
+## Cognee resilience
+
+If Cognee Cloud is unreachable, `kube_deploy` **continues** — risk scoring is skipped (`predict_risk: skipped`), and the deploy/incident pipeline runs normally. Do not abort or fall back to local kubectl when only memory recall fails.
+
+---
+
 ## Phase A — Pre-deploy
 
 1. **`kube_memory_status`** — confirm `kubernetes` is enabled (and note Slack, PagerDuty, GitHub, Prometheus availability).
@@ -65,7 +71,7 @@ Call **`kube_deploy`** once with:
 
 | Phase | What to tell the user |
 |-------|-------------------------|
-| `pre_deploy` | Manifest scan + risk score |
+| `pre_deploy` | Manifest scan + risk score (or skipped if Cognee down) |
 | `apply` | Resources applied |
 | `watch` | Pod phase / OOM status every poll |
 | `failure` | Failure detected |
@@ -140,4 +146,10 @@ End with:
 /kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml triggerPagerDuty=true
 ```
 
-Reference: [docs/demo-kube-deploy.md](docs/demo-kube-deploy.md), [docs/demo-full-loop.md](docs/demo-full-loop.md).
+Reference: [docs/demo-kube-deploy.md](docs/demo-kube-deploy.md), [docs/demo-full-loop.md](docs/demo-full-loop.md), [docs/mcp-tools.md](docs/mcp-tools.md).
+
+---
+
+## Note: this file vs MCP
+
+This `.cursor/commands/kube-deploy.md` file is a **Cursor slash-command prompt** — it is not served by the MCP server. The server exposes the **`kube_deploy`** tool via `POST /mcp`. Keep this file in the repo if you want `/kube-deploy` in Cursor; otherwise call `kube_deploy` directly from chat.
