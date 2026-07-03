@@ -59,3 +59,47 @@ app_memory : 4096
 
 prom_alerts
 /api -> 1 min -> 4$$ -> raise alert
+
+
+
+
+
+@soumya
+- Describe how you have used Cognee in your project
+- Connect integration -> Create API key -> Set up IDE (center)
+- remove card background - https://kube-memory.buildlab.in/docs?tab=tools
+- create command page in docs
+    - how to use and integrate commands
+- publish this mcp in open registries (5-6) 
+    update these links in README
+- /docs?tab=ide -> add images of supported clients(Cursor, Vs code, claude-code)
+- Update readme for "MCP tool Catalog"
+    ```
+<details>
+<summary>Prerequisites</summary>
+
+- Docker
+- Kubernetes
+- kubectl
+
+</details>
+
+<details>
+<summary>Installation</summary>
+
+</details>
+
+<details>
+<summary>Troubleshooting</summary>
+
+- Check logs
+- Verify configuration
+- Restart the service
+
+</details>
+```
+
+- update README - use of Cognee in kube-memory
+- Test kube-memory across Cursor, Antigravity, Vs code, claude-code
+
+- Medium blog post - "An MCP That Debugs Kubernetes for You powered by CogneeCloud"
