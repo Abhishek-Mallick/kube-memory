@@ -213,6 +213,7 @@ export async function postMessage(options: {
   workspaceId: string;
   channel: string;
   text: string;
+  threadTs?: string;
 }): Promise<unknown> {
   // const { secret } = await requireConnector(options.workspaceId, "slack");
   // const res = await fetch("https://slack.com/api/chat.postMessage", {
@@ -229,14 +230,15 @@ export async function postMessage(options: {
   // }
   // return data;
 
-  return await slackApiPost(
-    options.workspaceId,
-    "chat.postMessage",
-    {
-      channel: options.channel,
-      text: options.text,
-    }
-  );
+  const body: Record<string, unknown> = {
+    channel: options.channel,
+    text: options.text,
+  };
+  if (options.threadTs) {
+    body.thread_ts = options.threadTs;
+  }
+
+  return await slackApiPost(options.workspaceId, "chat.postMessage", body);
 }
 
 

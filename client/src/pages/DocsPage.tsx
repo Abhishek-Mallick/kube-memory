@@ -110,6 +110,24 @@ const toolGroups: ToolGroup[] = [
         description: "Fetch details for a single pull request.",
         params: "owner (required), repo (required), pullNumber (required)",
       },
+      {
+        name: "github_create_branch",
+        description: "Create a new branch from default or specified ref.",
+        params: "repo (required), branch (required), owner, fromRef",
+        role: "admin",
+      },
+      {
+        name: "github_create_or_update_file",
+        description: "Create or update a file in a repository branch.",
+        params: "repo (required), path (required), content (required), message (required), branch (required), owner",
+        role: "admin",
+      },
+      {
+        name: "github_create_pull_request",
+        description: "Open a pull request (used by kube_deploy for automated fixes).",
+        params: "repo (required), title (required), body (required), head (required), owner, base",
+        role: "admin",
+      },
     ],
   },
   {
@@ -144,8 +162,8 @@ const toolGroups: ToolGroup[] = [
       },
       {
         name: "slack_post_message",
-        description: "Post a message to a Slack channel.",
-        params: "channel (or default), text (required)",
+        description: "Post a message to a Slack channel (supports thread replies).",
+        params: "channel (or default), text (required), threadTs",
         role: "admin",
       },
     ],
@@ -189,6 +207,18 @@ const toolGroups: ToolGroup[] = [
         name: "pagerduty_list_users",
         description: "List users in the PagerDuty account.",
         params: "limit",
+      },
+      {
+        name: "pagerduty_add_incident_note",
+        description: "Add a note to a PagerDuty incident.",
+        params: "incidentId (required), content (required)",
+        role: "admin",
+      },
+      {
+        name: "pagerduty_resolve_incident",
+        description: "Resolve a PagerDuty incident.",
+        params: "incidentId (required), resolution",
+        role: "admin",
       },
     ],
   },
@@ -396,6 +426,25 @@ const toolGroups: ToolGroup[] = [
         name: "notion_query_database",
         description: "Query a Notion database with optional filter and sort.",
         params: "databaseId, filter, sorts, pageSize",
+      },
+    ],
+  },
+  {
+    id: "deploy",
+    label: "Deploy",
+    connector: "kubernetes",
+    tools: [
+      {
+        name: "kube_deploy",
+        description: "Full deploy → monitor → incident orchestrator (up to 5 min watch).",
+        params: "manifest (required), stableManifest, namespace, serviceName, githubOwner, githubRepo, slackChannel, triggerPagerDuty, watchDurationSec",
+        role: "admin",
+      },
+      {
+        name: "replay_impacted_traffic",
+        description: "Replay HTTP health/order requests on stable services via in-cluster curl Job.",
+        params: "namespace (required), requestsPerService, services[]",
+        role: "admin",
       },
     ],
   },
@@ -976,7 +1025,7 @@ export function DocsPage() {
                 <code className="font-mono text-xs">/kube-deploy</code> in Agent chat to run the full deploy → monitor → incident workflow using kube-memory MCP only.
               </p>
               <p className="text-sm text-muted-foreground">
-                Example: <code className="font-mono text-xs">/kube-deploy @docs/k8s-test/oom-payment-simulator.yaml</code>
+                Example: <code className="font-mono text-xs">/kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml</code>
               </p>
               <p className="text-xs text-muted-foreground">
                 Requires admin API key, Kubernetes connector enabled, and optionally Slack, PagerDuty, GitHub, and Prometheus for the failure path.

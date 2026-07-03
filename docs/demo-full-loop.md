@@ -1,8 +1,20 @@
 # Full demo loop — kube-memory MCP
 
-End-to-end **detect → diagnose → treat → remember → notify** using one orchestrated incident flow plus individual MCP tools.
+End-to-end **deploy → monitor → detect → diagnose → treat → remember → notify** using the **`kube_deploy`** orchestrator or individual MCP tools.
+
+**Primary demo:** [demo-kube-deploy.md](./demo-kube-deploy.md) — payment-service OOM with blue/green mitigation.
 
 **Prerequisites:** local server (`http://localhost:3000/mcp`) for kind clusters; admin `km_*` API key; connectors enabled in dashboard.
+
+---
+
+## Quick start (recommended)
+
+```
+/kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml triggerPagerDuty=true
+```
+
+Setup: `./demos/payment-service/scripts/demo-setup.sh`
 
 ---
 

@@ -79,6 +79,22 @@ Detailed walkthrough: [usage.md](./usage.md)
 
 ---
 
+## Deploy command (`/kube-deploy`)
+
+One Cursor slash command runs the full **deploy → monitor (5 min) → incident → fix PR → replay → resolve** loop via the `kube_deploy` MCP orchestrator.
+
+```
+/kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml
+```
+
+- **Demo app:** [`demos/payment-service/`](demos/payment-service/) — real HTTP payment-service + order-api with OOM canary
+- **Setup:** `./demos/payment-service/scripts/demo-setup.sh`
+- **Docs:** [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md)
+
+Requires admin `km_*` key, Kubernetes + Slack connectors; GitHub write PAT for automated fix PRs.
+
+---
+
 ## MCP tool catalog
 
 Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace API key. Availability depends on which integrations you have enabled.
@@ -99,6 +115,11 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 |------|--------|-------------|
 | `k8s_pod_logs` | reader+ | Read pod logs from connected cluster |
 | `k8s_get_events` | reader+ | List cluster or namespace events |
+| `k8s_get_pod` | reader+ | Pod status with OOMKilled detection |
+| `k8s_apply_manifest` | admin | Apply YAML manifests |
+| `k8s_delete_pod` | admin | Delete a pod |
+| `kube_deploy` | admin | Full deploy + monitor + incident orchestrator |
+| `replay_impacted_traffic` | admin | Replay HTTP on stable services after outage |
 
 ### GitHub
 
@@ -111,6 +132,9 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `github_list_pull_requests` | reader+ | List pull requests |
 | `github_list_commits` | reader+ | List commits on a branch or path |
 | `github_get_pull_request` | reader+ | Fetch a single pull request |
+| `github_create_branch` | admin | Create a branch |
+| `github_create_or_update_file` | admin | Commit a file change |
+| `github_create_pull_request` | admin | Open a fix PR (kube-memory bot) |
 
 ### Slack
 

@@ -179,4 +179,23 @@ export async function listEvents(options: {
   return response.items ?? [];
 }
 
+export async function listPods(options: {
+  namespace?: string;
+  labelSelector?: string;
+  workspaceId?: string;
+}): Promise<PodStatusSummary[]> {
+  const api = await resolveCoreV1Api(options.workspaceId);
+  if (!api) {
+    throw new Error("Kubernetes is not configured");
+  }
+
+  const namespace = options.namespace ?? "default";
+  const response = await api.listNamespacedPod({
+    namespace,
+    labelSelector: options.labelSelector,
+  });
+
+  return (response.items ?? []).map(summarizePodStatus);
+}
+
 export type { ApplyManifestResult, PodStatusSummary };

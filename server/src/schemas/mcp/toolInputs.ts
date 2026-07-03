@@ -105,6 +105,7 @@ export const slackGetHistoryInputSchema = z.object({
 export const slackPostMessageInputSchema = z.object({
   channel: z.string().min(1).optional(),
   text: z.string().min(1),
+  threadTs: z.string().optional(),
 });
 
 export const slackListChannelsInputSchema = z.object({
@@ -219,6 +220,8 @@ export const incidentOpenInputSchema = z.object({
   triggerPagerDuty: z.boolean().optional(),
   pagerDutyServiceId: z.string().optional(),
   rememberInMemory: z.boolean().optional(),
+  onCallTeam: z.string().optional(),
+  impactedServices: z.array(z.string()).optional(),
 });
 
 export const incidentGetInputSchema = z.object({
@@ -233,8 +236,10 @@ export const incidentUpdateInputSchema = z.object({
   incidentId: z.string().min(1),
   status: z.enum(["open", "investigating", "resolved", "closed"]).optional(),
   note: z.string().optional(),
+  fixPrUrl: z.string().optional(),
   notifySlack: z.boolean().optional(),
   slackChannel: z.string().optional(),
+  rememberResolution: z.boolean().optional(),
 });
 
 export const pagerdutyCreateIncidentInputSchema = z.object({
@@ -242,6 +247,73 @@ export const pagerdutyCreateIncidentInputSchema = z.object({
   serviceId: z.string().min(1),
   body: z.string().optional(),
   urgency: z.enum(["high", "low"]).optional(),
+});
+
+export const pagerdutyAddIncidentNoteInputSchema = z.object({
+  incidentId: z.string().min(1),
+  content: z.string().min(1),
+});
+
+export const pagerdutyResolveIncidentInputSchema = z.object({
+  incidentId: z.string().min(1),
+  resolution: z.string().optional(),
+});
+
+export const githubCreateBranchInputSchema = z.object({
+  owner: z.string().optional(),
+  repo: z.string().min(1),
+  branch: z.string().min(1),
+  fromRef: z.string().optional(),
+});
+
+export const githubCreateOrUpdateFileInputSchema = z.object({
+  owner: z.string().optional(),
+  repo: z.string().min(1),
+  path: z.string().min(1),
+  content: z.string().min(1),
+  message: z.string().min(1),
+  branch: z.string().min(1),
+});
+
+export const githubCreatePullRequestInputSchema = z.object({
+  owner: z.string().optional(),
+  repo: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  head: z.string().min(1),
+  base: z.string().optional(),
+});
+
+export const kubeDeployInputSchema = z.object({
+  manifest: z.string().min(1),
+  stableManifest: z.string().optional(),
+  namespace: z.string().optional(),
+  serviceName: z.string().optional(),
+  podName: z.string().optional(),
+  githubOwner: z.string().optional(),
+  githubRepo: z.string().optional(),
+  slackChannel: z.string().optional(),
+  triggerPagerDuty: z.boolean().optional(),
+  pagerDutyServiceId: z.string().optional(),
+  watchDurationSec: z.number().int().min(30).max(600).optional(),
+  pollIntervalSec: z.number().int().min(5).max(60).optional(),
+  argocdApplication: z.string().optional(),
+  dryRun: z.boolean().optional(),
+});
+
+export const replayImpactedTrafficInputSchema = z.object({
+  namespace: z.string().min(1),
+  requestsPerService: z.number().int().min(1).max(10).optional(),
+  services: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        port: z.number().int().min(1).max(65535),
+        healthPath: z.string().optional(),
+        orderPath: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const gcpListInstancesInputSchema = z.object({

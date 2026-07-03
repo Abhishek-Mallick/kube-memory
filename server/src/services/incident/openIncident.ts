@@ -3,7 +3,12 @@ import { IncidentRecord } from "../../db/models/IncidentRecord.js";
 import { classifyFailure } from "../classification/heuristics.js";
 import { rememberMemory } from "../memory/remember.js";
 import { postMessage, resolveDefaultChannel, isSlackAvailable } from "../slack/client.js";
-import { createIncident as createPagerDutyIncident, isPagerDutyAvailable } from "../pagerduty/client.js";
+import {
+  createIncident as createPagerDutyIncident,
+  isPagerDutyAvailable,
+  addIncidentNote,
+  resolveIncident as resolvePagerDutyIncident,
+} from "../pagerduty/client.js";
 import { requireConnector } from "../connectors/connectorHttp.js";
 import {
   buildClassificationText,
@@ -11,6 +16,7 @@ import {
 } from "./enrichContext.js";
 import { formatIncidentOpenedSlackMessage, formatIncidentUpdatedSlackMessage } from "./formatSlack.js";
 import type { IncidentOpenInput, IncidentOpenResult } from "./types.js";
+import { formatSlackMention, resolveOncall } from "../oncall/roster.js";
 
 function defaultTitle(input: IncidentOpenInput, category?: string): string {
   if (input.title) return input.title;
@@ -40,6 +46,13 @@ export async function openIncident(
   const title = defaultTitle(input, classification.category);
   const severity = input.severity ?? (classification.category === "Resource Limit" ? "high" : "medium");
 
+  const impactedFromAlerts = extractImpactedServices(context);
+  const impactedServices = input.impactedServices?.length
+    ? input.impactedServices
+    : impactedFromAlerts;
+
+  const onCall = await resolveOncall(workspaceId, input.onCallTeam ?? "platform");
+
   const incident = await IncidentRecord.create({
     workspaceId: ctx.workspaceId,
     title,
@@ -54,6 +67,8 @@ export async function openIncident(
         ? `${classification.category} — matched "${classification.matchedPattern}"`
         : classification.category,
     recommendedFix: classification.suggestion,
+    impactedServices,
+    onCallAssignee: onCall?.name,
     context,
   });
 
@@ -147,7 +162,11 @@ export async function openIncident(
     if (await isSlackAvailable(workspaceId)) {
       try {
         const channel = input.slackChannel ?? (await resolveDefaultChannel(workspaceId)) ?? "k8s-update";
-        const text = formatIncidentOpenedSlackMessage(incident, context);
+        const onCallMention = formatSlackMention(onCall);
+        const text = formatIncidentOpenedSlackMessage(incident, context, {
+          onCallMention,
+          impactedServices,
+        });
         const result = (await postMessage({ workspaceId, channel, text })) as {
           ts?: string;
           channel?: string;
@@ -186,6 +205,17 @@ export async function openIncident(
   };
 }
 
+function extractImpactedServices(context: import("./types.js").IncidentContextSnapshot): string[] {
+  const alerts = (context.prometheus?.alerts as Array<{ labels?: Record<string, string>; state?: string }> | undefined) ?? [];
+  const services = new Set<string>();
+  for (const alert of alerts) {
+    if (alert.state && alert.state !== "firing") continue;
+    const svc = alert.labels?.service ?? alert.labels?.app ?? alert.labels?.alertname;
+    if (svc) services.add(svc);
+  }
+  return [...services];
+}
+
 export async function getIncidentById(
   workspaceId: Types.ObjectId,
   incidentId: string,
@@ -204,9 +234,16 @@ export async function listIncidents(
 }
 
 export async function updateIncident(
-  ctx: { workspaceId: Types.ObjectId },
+  ctx: { workspaceId: Types.ObjectId; datasetName?: string },
   incidentId: string,
-  update: { status?: "open" | "investigating" | "resolved" | "closed"; note?: string; notifySlack?: boolean; slackChannel?: string },
+  update: {
+    status?: "open" | "investigating" | "resolved" | "closed";
+    note?: string;
+    fixPrUrl?: string;
+    notifySlack?: boolean;
+    slackChannel?: string;
+    rememberResolution?: boolean;
+  },
 ): Promise<unknown> {
   const incident = await IncidentRecord.findOne({ _id: incidentId, workspaceId: ctx.workspaceId });
   if (!incident) {
@@ -219,16 +256,92 @@ export async function updateIncident(
       incident.resolvedAt = new Date();
     }
   }
+
+  if (update.fixPrUrl) {
+    incident.fixPrUrl = update.fixPrUrl;
+  }
+
+  if (update.note) {
+    incident.notes = incident.notes ?? [];
+    incident.notes.push({ text: update.note, createdAt: new Date() });
+  }
+
   await incident.save();
 
+  const workspaceId = ctx.workspaceId.toString();
+
+  if (update.note && incident.pagerDutyIncidentId && (await isPagerDutyAvailable(workspaceId))) {
+    try {
+      await addIncidentNote({
+        workspaceId,
+        incidentId: incident.pagerDutyIncidentId,
+        content: update.note,
+      });
+    } catch {
+      // PagerDuty note sync is best-effort
+    }
+  }
+
+  if (
+    update.status === "resolved" &&
+    incident.pagerDutyIncidentId &&
+    (await isPagerDutyAvailable(workspaceId))
+  ) {
+    try {
+      await resolvePagerDutyIncident({
+        workspaceId,
+        incidentId: incident.pagerDutyIncidentId,
+        resolution: update.note ?? incident.recommendedFix ?? "Resolved via kube-memory",
+      });
+    } catch {
+      // best-effort
+    }
+  }
+
+  if (update.rememberResolution !== false && update.status === "resolved" && ctx.datasetName) {
+    try {
+      await rememberMemory(
+        { workspaceId: ctx.workspaceId, datasetName: ctx.datasetName },
+        {
+          episode: {
+            entity: "Incident",
+            service: { name: incident.serviceName, criticality: "high" },
+            incident: {
+              time: incident.resolvedAt?.toISOString() ?? new Date().toISOString(),
+              severity: incident.severity,
+              status: "resolved",
+            },
+            rootCause: incident.rootCauseCategory
+              ? {
+                  category: incident.rootCauseCategory as import("../../schemas/graph/index.js").FailureCategory,
+                  description: incident.rootCauseDescription ?? "",
+                }
+              : undefined,
+            fixAction: incident.recommendedFix
+              ? { type: "config-change", description: incident.recommendedFix }
+              : undefined,
+            relations: ["Incident-hasRootCause-RootCause"],
+            rawText: `Resolved incident ${incidentId} for ${incident.serviceName}`,
+          },
+        },
+      );
+    } catch {
+      // memory is best-effort
+    }
+  }
+
   if (update.notifySlack !== false) {
-    const workspaceId = ctx.workspaceId.toString();
     if (await isSlackAvailable(workspaceId)) {
       const channel =
         update.slackChannel ?? incident.slackChannel ?? (await resolveDefaultChannel(workspaceId));
       if (channel) {
         const text = formatIncidentUpdatedSlackMessage(incident, update.note);
-        await postMessage({ workspaceId, channel, text });
+        await postMessage({
+          workspaceId,
+          channel,
+          text,
+          threadTs: incident.slackMessageTs,
+        });
       }
     }
   }

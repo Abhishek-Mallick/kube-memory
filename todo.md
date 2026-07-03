@@ -29,7 +29,7 @@
 failure -> OOM
     3.a kuberneetes tools -> get logs, get pod status
             check prometheus -> check alerts and get impacted applications
-    3.a.1 check cognee for past siilar failures and it's remediation
+    3.a.1 check cognee for past similar failures and it's remediation
     3.b remidiate/mitigate the issue -> last stable pod make it active
     3.c analyse the issue -> found
     3.d find who the on call engineer is

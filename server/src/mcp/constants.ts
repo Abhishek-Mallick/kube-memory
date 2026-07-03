@@ -11,7 +11,7 @@ CRITICAL RULES:
 
 Memory tools (memory_recall, memory_remember, predict_risk) use Cognee semantic search over past DevOps episodes.
 
-Incident workflow: use incident_open for end-to-end detect → enrich (K8s, GitHub, Prometheus, ArgoCD) → classify → persist → memory → Slack/PagerDuty.
+Incident workflow: use kube_deploy for full deploy → monitor → incident loop, or incident_open for detect → enrich → classify → persist → memory → Slack/PagerDuty.
 Follow with incident_get, incident_list, incident_update to manage lifecycle.`;
 
 export const READ_ONLY_ANNOTATIONS = {

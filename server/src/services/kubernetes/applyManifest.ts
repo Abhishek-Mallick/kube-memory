@@ -8,6 +8,7 @@ const ALLOWED_KINDS = new Set([
   "ConfigMap",
   "Secret",
   "Deployment",
+  "Job",
 ]);
 
 const K8S_NAME_PATTERN = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;

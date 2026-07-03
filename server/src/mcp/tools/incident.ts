@@ -38,6 +38,8 @@ export function registerIncidentTools(server: McpServer): void {
         triggerPagerDuty: z.boolean().optional(),
         pagerDutyServiceId: z.string().optional(),
         rememberInMemory: z.boolean().optional(),
+        onCallTeam: z.string().optional(),
+        impactedServices: z.array(z.string()).optional(),
       },
     },
     async (args: Record<string, unknown>) => {
@@ -116,8 +118,10 @@ export function registerIncidentTools(server: McpServer): void {
         incidentId: z.string(),
         status: z.enum(["open", "investigating", "resolved", "closed"]).optional(),
         note: z.string().optional(),
+        fixPrUrl: z.string().optional(),
         notifySlack: z.boolean().optional(),
         slackChannel: z.string().optional(),
+        rememberResolution: z.boolean().optional(),
       },
     },
     async (args: Record<string, unknown>) => {
@@ -129,7 +133,7 @@ export function registerIncidentTools(server: McpServer): void {
       try {
         const input = incidentUpdateInputSchema.parse(args);
         const incident = await updateIncident(
-          { workspaceId: auth.workspace._id },
+          { workspaceId: auth.workspace._id, datasetName: auth.workspace.cogneeDataset },
           input.incidentId,
           input,
         );

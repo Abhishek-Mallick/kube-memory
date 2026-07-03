@@ -33,6 +33,8 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().default("http://localhost:5173"),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   CONNECTOR_ENCRYPTION_KEY: z.string().min(32).optional(),
+  PAYMENT_SERVICE_GITHUB_OWNER: z.string().optional(),
+  PAYMENT_SERVICE_GITHUB_REPO: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

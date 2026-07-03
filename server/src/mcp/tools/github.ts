@@ -10,6 +10,9 @@ import {
   githubListPullRequestsInputSchema,
   githubListRecentCommitsInputSchema,
   githubListRepositoriesInputSchema,
+  githubCreateBranchInputSchema,
+  githubCreateOrUpdateFileInputSchema,
+  githubCreatePullRequestInputSchema,
 } from "../../schemas/mcp/toolInputs.js";
 import {
   getAuthenticatedUser,
@@ -21,6 +24,9 @@ import {
   listRecentCommits,
   listRepositories,
   resolveOwner,
+  createBranch,
+  createOrUpdateFile,
+  createPullRequest,
 } from "../../services/github/client.js";
 
 export function registerGitHubTools(server: McpServer): void {
@@ -242,6 +248,118 @@ export function registerGitHubTools(server: McpServer): void {
         const owner = await resolveOwner(workspaceId, input.owner);
         const pullRequest = await getPullRequest({ ...input, owner, workspaceId });
         return textContent({ pullRequest, owner, repo: input.repo });
+      } catch (err) {
+        return connectorError("github", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "github_create_branch",
+    {
+      title: "GitHub Create Branch",
+      description: integrationToolDescription(
+        "GitHub",
+        "Create a new branch from default or specified ref",
+        "Requires repo write scope on the workspace PAT.",
+      ),
+      inputSchema: {
+        owner: z.string().optional(),
+        repo: z.string(),
+        branch: z.string(),
+        fromRef: z.string().optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isGitHubAvailable(workspaceId))) {
+        return textContent({ error: "GitHub connector not configured." });
+      }
+      try {
+        const input = githubCreateBranchInputSchema.parse(args);
+        const owner = await resolveOwner(workspaceId, input.owner);
+        const result = await createBranch({ ...input, owner, workspaceId });
+        return textContent({ ...result, owner, repo: input.repo });
+      } catch (err) {
+        return connectorError("github", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "github_create_or_update_file",
+    {
+      title: "GitHub Create or Update File",
+      description: integrationToolDescription(
+        "GitHub",
+        "Create or update a file in a repository branch",
+        "Requires repo write scope on the workspace PAT.",
+      ),
+      inputSchema: {
+        owner: z.string().optional(),
+        repo: z.string(),
+        path: z.string(),
+        content: z.string(),
+        message: z.string(),
+        branch: z.string(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isGitHubAvailable(workspaceId))) {
+        return textContent({ error: "GitHub connector not configured." });
+      }
+      try {
+        const input = githubCreateOrUpdateFileInputSchema.parse(args);
+        const owner = await resolveOwner(workspaceId, input.owner);
+        const result = await createOrUpdateFile({ ...input, owner, workspaceId });
+        return textContent({ ...result, owner, repo: input.repo });
+      } catch (err) {
+        return connectorError("github", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "github_create_pull_request",
+    {
+      title: "GitHub Create Pull Request",
+      description: integrationToolDescription(
+        "GitHub",
+        "Open a pull request between head and base branches",
+        "Used by kube_deploy for automated fix PRs. Requires repo write scope.",
+      ),
+      inputSchema: {
+        owner: z.string().optional(),
+        repo: z.string(),
+        title: z.string(),
+        body: z.string(),
+        head: z.string(),
+        base: z.string().optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isGitHubAvailable(workspaceId))) {
+        return textContent({ error: "GitHub connector not configured." });
+      }
+      try {
+        const input = githubCreatePullRequestInputSchema.parse(args);
+        const owner = await resolveOwner(workspaceId, input.owner);
+        const result = await createPullRequest({ ...input, owner, workspaceId });
+        return textContent({ ...result, owner, repo: input.repo });
       } catch (err) {
         return connectorError("github", err);
       }

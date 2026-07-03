@@ -9,6 +9,8 @@ import {
   pagerdutyListOncallsInputSchema,
   pagerdutyListUsersInputSchema,
   pagerdutyCreateIncidentInputSchema,
+  pagerdutyAddIncidentNoteInputSchema,
+  pagerdutyResolveIncidentInputSchema,
 } from "../../schemas/mcp/toolInputs.js";
 import {
   createIncident,
@@ -20,6 +22,8 @@ import {
   listOncalls,
   listServices,
   listUsers,
+  addIncidentNote,
+  resolveIncident,
 } from "../../services/pagerduty/client.js";
 
 function textContent(data: unknown) {
@@ -244,6 +248,64 @@ export function registerPagerDutyTools(server: McpServer): void {
         const input = pagerdutyCreateIncidentInputSchema.parse(args);
         const incident = await createIncident({ ...input, workspaceId });
         return textContent({ incident });
+      } catch (err) {
+        return connectorError("pagerduty", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "pagerduty_add_incident_note",
+    {
+      title: "PagerDuty Add Incident Note",
+      description: "Add a note to a PagerDuty incident. Requires admin role.",
+      inputSchema: {
+        incidentId: z.string(),
+        content: z.string(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isPagerDutyAvailable(workspaceId))) {
+        return textContent({ error: "PagerDuty connector not configured." });
+      }
+      try {
+        const input = pagerdutyAddIncidentNoteInputSchema.parse(args);
+        const note = await addIncidentNote({ workspaceId, ...input });
+        return textContent({ note });
+      } catch (err) {
+        return connectorError("pagerduty", err);
+      }
+    },
+  );
+
+  server.registerTool(
+    "pagerduty_resolve_incident",
+    {
+      title: "PagerDuty Resolve Incident",
+      description: "Resolve a PagerDuty incident. Requires admin role.",
+      inputSchema: {
+        incidentId: z.string(),
+        resolution: z.string().optional(),
+      },
+    },
+    async (args: Record<string, unknown>) => {
+      const auth = requireAuthContext();
+      if (auth.role !== "admin") {
+        return textContent({ error: "Admin role required" });
+      }
+      const workspaceId = auth.workspace._id.toString();
+      if (!(await isPagerDutyAvailable(workspaceId))) {
+        return textContent({ error: "PagerDuty connector not configured." });
+      }
+      try {
+        const input = pagerdutyResolveIncidentInputSchema.parse(args);
+        await resolveIncident({ workspaceId, ...input });
+        return textContent({ resolved: true, incidentId: input.incidentId });
       } catch (err) {
         return connectorError("pagerduty", err);
       }

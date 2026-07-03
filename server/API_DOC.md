@@ -646,10 +646,15 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `k8s_get_pod` | reader+ | kubernetes | Get pod status and container state |
 | `k8s_apply_manifest` | admin | kubernetes | Apply YAML manifest to cluster |
 | `k8s_delete_pod` | admin | kubernetes | Delete a pod in a namespace |
+| `kube_deploy` | admin | kubernetes | Full deploy, monitor, and incident orchestrator |
+| `replay_impacted_traffic` | admin | kubernetes | Replay HTTP on stable services after outage |
 | `github_list_issues` | reader+ | github | List GitHub issues for a repo |
 | `github_list_pull_requests` | reader+ | github | List pull requests |
 | `github_list_commits` | reader+ | github | List commits on a branch or path |
 | `github_get_pull_request` | reader+ | github | Fetch a single pull request |
+| `github_create_branch` | admin | github | Create a GitHub branch |
+| `github_create_or_update_file` | admin | github | Create or update a file in a repo |
+| `github_create_pull_request` | admin | github | Open a GitHub pull request |
 | `slack_get_history` | reader+ | slack | Fetch recent Slack channel messages |
 | `slack_get_channel_info` | reader+ | slack | Get Slack channel metadata |
 | `slack_get_replies` | reader+ | slack | Fetch replies for a Slack thread |
@@ -663,6 +668,9 @@ Uses JSON-RPC 2.0 over Streamable HTTP. Clients typically discover tools via `to
 | `pagerduty_list_incident_notes` | reader+ | pagerduty | List notes on a PagerDuty incident |
 | `pagerduty_list_oncalls` | reader+ | pagerduty | List who is currently on call |
 | `pagerduty_list_users` | reader+ | pagerduty | List PagerDuty users |
+| `pagerduty_create_incident` | admin | pagerduty | Create a PagerDuty incident |
+| `pagerduty_add_incident_note` | admin | pagerduty | Add note to PagerDuty incident |
+| `pagerduty_resolve_incident` | admin | pagerduty | Resolve PagerDuty incident |
 | `prometheus_query` | reader+ | prometheus | PromQL instant query |
 | `prometheus_query_range` | reader+ | prometheus | PromQL range query |
 | `prometheus_list_alerts` | reader+ | prometheus | List firing alerts |

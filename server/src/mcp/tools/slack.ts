@@ -238,6 +238,7 @@ export function registerSlackTools(server: McpServer): void {
       inputSchema: {
         channel: z.string().optional(),
         text: z.string(),
+        threadTs: z.string().optional(),
       },
     },
     async (args: Record<string, unknown>) => {
@@ -259,7 +260,12 @@ export function registerSlackTools(server: McpServer): void {
             error: "Channel is required. Either provide a channel ID or configure a default Slack channel in the workspace connector." 
           });
         }
-        const result = await postMessage({ workspaceId, channel, text: input.text });
+        const result = await postMessage({
+          workspaceId,
+          channel,
+          text: input.text,
+          threadTs: input.threadTs,
+        });
         return textContent({ channel, result });
       } catch (err) {
         return connectorError("slack", err);

@@ -22,6 +22,10 @@ export interface IIncidentRecord extends Document {
   pagerDutyIncidentUrl?: string;
   slackChannel?: string;
   slackMessageTs?: string;
+  onCallAssignee?: string;
+  fixPrUrl?: string;
+  impactedServices?: string[];
+  notes?: Array<{ text: string; createdAt: Date }>;
   context: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
@@ -45,6 +49,15 @@ const incidentRecordSchema = new Schema<IIncidentRecord>(
     pagerDutyIncidentUrl: { type: String },
     slackChannel: { type: String },
     slackMessageTs: { type: String },
+    onCallAssignee: { type: String },
+    fixPrUrl: { type: String },
+    impactedServices: [{ type: String }],
+    notes: [
+      {
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
     context: { type: Schema.Types.Mixed, default: {} },
     resolvedAt: { type: Date },
   },

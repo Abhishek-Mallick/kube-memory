@@ -1,4 +1,5 @@
 import { connectorJson, connectorJsonIfOk, requireConnector } from "../connectors/connectorHttp.js";
+import { getEnv } from "../../config/env.js";
 
 interface GitHubUser {
   login: string;
@@ -290,4 +291,143 @@ export async function isGitHubAvailable(workspaceId: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function resolvePaymentServiceRepo(): { owner?: string; repo?: string } {
+  const env = getEnv();
+  return {
+    owner: env.PAYMENT_SERVICE_GITHUB_OWNER?.trim() || undefined,
+    repo: env.PAYMENT_SERVICE_GITHUB_REPO?.trim() || undefined,
+  };
+}
+
+export async function getDefaultBranch(options: {
+  workspaceId: string;
+  owner: string;
+  repo: string;
+}): Promise<string> {
+  const data = await connectorJson<{ default_branch?: string }>(
+    options.workspaceId,
+    "github",
+    `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}`,
+  );
+  return data.default_branch ?? "main";
+}
+
+export async function getFileSha(options: {
+  workspaceId: string;
+  owner: string;
+  repo: string;
+  path: string;
+  ref?: string;
+}): Promise<string | undefined> {
+  const params = options.ref ? `?ref=${encodeURIComponent(options.ref)}` : "";
+  try {
+    const data = await connectorJson<{ sha?: string }>(
+      options.workspaceId,
+      "github",
+      `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}/contents/${encodeURIComponent(options.path)}${params}`,
+    );
+    return data.sha;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function createBranch(options: {
+  workspaceId: string;
+  owner: string;
+  repo: string;
+  branch: string;
+  fromRef?: string;
+}): Promise<{ ref: string; sha: string }> {
+  const baseRef = options.fromRef ?? (await getDefaultBranch(options));
+  const refData = await connectorJson<{ object: { sha: string } }>(
+    options.workspaceId,
+    "github",
+    `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}/git/ref/heads/${encodeURIComponent(baseRef)}`,
+  );
+
+  const sha = refData.object.sha;
+  const data = await connectorJson<{ ref: string; object: { sha: string } }>(
+    options.workspaceId,
+    "github",
+    `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}/git/refs`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ref: `refs/heads/${options.branch}`, sha }),
+    },
+  );
+
+  return { ref: data.ref, sha: data.object.sha };
+}
+
+export async function createOrUpdateFile(options: {
+  workspaceId: string;
+  owner: string;
+  repo: string;
+  path: string;
+  content: string;
+  message: string;
+  branch: string;
+}): Promise<{ sha: string; path: string }> {
+  const existingSha = await getFileSha({
+    workspaceId: options.workspaceId,
+    owner: options.owner,
+    repo: options.repo,
+    path: options.path,
+    ref: options.branch,
+  });
+
+  const body: Record<string, unknown> = {
+    message: options.message,
+    content: Buffer.from(options.content, "utf8").toString("base64"),
+    branch: options.branch,
+  };
+  if (existingSha) {
+    body.sha = existingSha;
+  }
+
+  const data = await connectorJson<{ content: { sha: string; path: string } }>(
+    options.workspaceId,
+    "github",
+    `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}/contents/${encodeURIComponent(options.path)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
+  return { sha: data.content.sha, path: data.content.path };
+}
+
+export async function createPullRequest(options: {
+  workspaceId: string;
+  owner: string;
+  repo: string;
+  title: string;
+  body: string;
+  head: string;
+  base?: string;
+}): Promise<{ number: number; html_url: string; title: string }> {
+  const base = options.base ?? (await getDefaultBranch(options));
+  const data = await connectorJson<{ number: number; html_url: string; title: string }>(
+    options.workspaceId,
+    "github",
+    `https://api.github.com/repos/${encodeURIComponent(options.owner)}/${encodeURIComponent(options.repo)}/pulls`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: options.title,
+        body: options.body,
+        head: options.head,
+        base,
+      }),
+    },
+  );
+
+  return { number: data.number, html_url: data.html_url, title: data.title };
 }

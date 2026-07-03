@@ -11,6 +11,7 @@ import { registerGcpTools } from "./tools/gcp.js";
 import { registerLinearTools } from "./tools/linear.js";
 import { registerNotionTools } from "./tools/notion.js";
 import { registerIncidentTools } from "./tools/incident.js";
+import { registerDeployTools } from "./tools/deploy.js";
 import { registerPlatformTools } from "./tools/platform.js";
 
 export function createMcpServer(): McpServer {
@@ -36,6 +37,7 @@ export function createMcpServer(): McpServer {
   registerLinearTools(server);
   registerNotionTools(server);
   registerIncidentTools(server);
+  registerDeployTools(server);
 
   return server;
 }

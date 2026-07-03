@@ -65,6 +65,7 @@ function summarizeArgoCD(context: IncidentContextSnapshot): string {
 export function formatIncidentOpenedSlackMessage(
   incident: IncidentRecordDoc,
   context: IncidentContextSnapshot,
+  options?: { onCallMention?: string; impactedServices?: string[] },
 ): string {
   const k8sLogs = context.kubernetes?.logs?.trim().slice(0, 400);
   const podStatus = context.kubernetes?.podStatus;
@@ -79,6 +80,10 @@ export function formatIncidentOpenedSlackMessage(
     `*Title:* ${incident.title}`,
     `*Service:* \`${incident.serviceName}\`${incident.namespace ? ` · ns \`${incident.namespace}\`` : ""}${incident.podName ? ` · pod \`${incident.podName}\`` : ""}`,
     `*Severity:* ${incident.severity} · *Status:* ${incident.status}`,
+    options?.onCallMention ? `*On-call:* ${options.onCallMention}` : "",
+    options?.impactedServices?.length
+      ? `*Impacted apps:* ${options.impactedServices.map((s) => `\`${s}\``).join(", ")}`
+      : "",
     "",
     `*Root cause:* ${incident.rootCauseCategory ?? "Unknown"} — ${incident.rootCauseDescription ?? "Under investigation"}`,
     incident.recommendedFix ? `*Recommended fix:* ${incident.recommendedFix}` : "",
@@ -113,6 +118,7 @@ export function formatIncidentUpdatedSlackMessage(
     `*Status:* ${incident.status}`,
     `*Service:* \`${incident.serviceName}\``,
     note ? `*Note:* ${note}` : "",
+    incident.fixPrUrl ? `*Fix PR:* ${incident.fixPrUrl}` : "",
     incident.resolvedAt ? `*Resolved at:* ${incident.resolvedAt.toISOString()}` : "",
     "",
     "_Updated via kube-memory `incident_update`_",

@@ -167,3 +167,48 @@ export async function createIncident(options: {
 
   return { id: data.incident.id, html_url: data.incident.html_url };
 }
+
+export async function addIncidentNote(options: {
+  workspaceId: string;
+  incidentId: string;
+  content: string;
+}): Promise<{ id: string }> {
+  const data = await connectorJson<{ note: { id: string } }>(
+    options.workspaceId,
+    "pagerduty",
+    `https://api.pagerduty.com/incidents/${encodeURIComponent(options.incidentId)}/notes`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        note: { content: options.content },
+      }),
+    },
+  );
+  return { id: data.note.id };
+}
+
+export async function resolveIncident(options: {
+  workspaceId: string;
+  incidentId: string;
+  resolution?: string;
+}): Promise<void> {
+  await connectorJson(
+    options.workspaceId,
+    "pagerduty",
+    `https://api.pagerduty.com/incidents/${encodeURIComponent(options.incidentId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        incident: {
+          type: "incident_reference",
+          status: "resolved",
+          resolution: options.resolution
+            ? { type: "resolve_reference", content: options.resolution }
+            : undefined,
+        },
+      }),
+    },
+  );
+}

@@ -15,6 +15,8 @@ export interface IncidentOpenInput {
   triggerPagerDuty?: boolean;
   pagerDutyServiceId?: string;
   rememberInMemory?: boolean;
+  onCallTeam?: string;
+  impactedServices?: string[];
 }
 
 export interface IncidentContextSnapshot {
