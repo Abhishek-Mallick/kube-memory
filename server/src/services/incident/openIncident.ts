@@ -16,7 +16,7 @@ import {
 } from "./enrichContext.js";
 import { formatIncidentOpenedSlackMessage, formatIncidentUpdatedSlackMessage } from "./formatSlack.js";
 import type { IncidentOpenInput, IncidentOpenResult } from "./types.js";
-import { formatSlackMention, resolveOncall } from "../oncall/roster.js";
+import { formatSlackMention, resolveOncall, clearRosterCache } from "../oncall/roster.js";
 
 function defaultTitle(input: IncidentOpenInput, category?: string): string {
   if (input.title) return input.title;
@@ -51,6 +51,7 @@ export async function openIncident(
     ? input.impactedServices
     : impactedFromAlerts;
 
+  clearRosterCache();
   const onCall = await resolveOncall(workspaceId, input.onCallTeam ?? "platform");
 
   const incident = await IncidentRecord.create({

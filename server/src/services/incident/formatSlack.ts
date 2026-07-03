@@ -76,6 +76,7 @@ export function formatIncidentOpenedSlackMessage(
 
   return [
     `🚨 *Incident Opened* — \`${incident._id.toString()}\``,
+    options?.onCallMention ? `${options.onCallMention} — *you are on call*` : "",
     "",
     `*Title:* ${incident.title}`,
     `*Service:* \`${incident.serviceName}\`${incident.namespace ? ` · ns \`${incident.namespace}\`` : ""}${incident.podName ? ` · pod \`${incident.podName}\`` : ""}`,

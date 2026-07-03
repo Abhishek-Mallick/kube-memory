@@ -13,6 +13,35 @@ export interface OncallPerson {
   source: "roster" | "pagerduty" | "slack";
 }
 
+function parseCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  values.push(current.trim());
+  return values;
+}
+
+/** Slack user IDs start with U (or W for workspace guests). Member IDs are not valid for mentions. */
+export function normalizeSlackUserId(raw?: string): string | undefined {
+  if (!raw?.trim()) return undefined;
+  const id = raw.trim().replace(/^@/, "");
+  if (/^U[A-Z0-9]+$/i.test(id) || /^W[A-Z0-9]+$/i.test(id)) return id;
+  return undefined;
+}
+
 interface RosterRow {
   name: string;
   email?: string;
@@ -20,6 +49,15 @@ interface RosterRow {
   pagerduty_user_id?: string;
   team?: string;
   active?: string;
+}
+
+function coalesceSlackId(row: RosterRow): string | undefined {
+  const fromColumn = normalizeSlackUserId(row.slack_user_id);
+  if (fromColumn) return fromColumn;
+  // Common mistake: Slack user ID pasted in email column
+  const fromEmail = normalizeSlackUserId(row.email);
+  if (fromEmail) return fromEmail;
+  return undefined;
 }
 
 let cachedRoster: RosterRow[] | null = null;
@@ -40,9 +78,9 @@ function loadRosterCsv(): RosterRow[] {
       return cachedRoster;
     }
 
-    const headers = lines[0].split(",").map((h) => h.trim());
-    cachedRoster = lines.slice(1).map((line) => {
-      const values = line.split(",").map((v) => v.trim());
+    const headers = parseCsvLine(lines[0]);
+    cachedRoster = lines.slice(1).filter((l) => l.trim()).map((line) => {
+      const values = parseCsvLine(line);
       const row: Record<string, string> = {};
       headers.forEach((header, i) => {
         row[header] = values[i] ?? "";
@@ -67,8 +105,8 @@ export function getRosterEntry(team?: string): OncallPerson | undefined {
 
   return {
     name: match.name,
-    email: match.email,
-    slackUserId: match.slack_user_id,
+    email: normalizeSlackUserId(match.email) ? undefined : match.email,
+    slackUserId: coalesceSlackId(match),
     pagerDutyUserId: match.pagerduty_user_id,
     team: match.team,
     source: "roster",
@@ -116,6 +154,12 @@ export async function resolveOncall(workspaceId: string, team?: string): Promise
 
 export function formatSlackMention(person?: OncallPerson): string {
   if (!person) return "";
-  if (person.slackUserId) return `<@${person.slackUserId}>`;
+  const id = normalizeSlackUserId(person.slackUserId);
+  if (id) return `<@${id}>`;
   return person.name ? `@${person.name}` : "";
+}
+
+/** Invalidate cached roster (e.g. after CSV edit). */
+export function clearRosterCache(): void {
+  cachedRoster = null;
 }

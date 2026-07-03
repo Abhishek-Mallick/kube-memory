@@ -1,5 +1,9 @@
 import type { Types } from "mongoose";
-import { recallMemory, scoreRecallSimilarity } from "../memory/recall.js";
+import {
+  recallMemory,
+  scoreRecallSimilarity,
+  type RecallResult,
+} from "../memory/recall.js";
 import { rememberMemory } from "../memory/remember.js";
 import {
   applyManifest,
@@ -18,6 +22,12 @@ import {
   parseManifestSummary,
 } from "./parseManifest.js";
 import { detectImpactedApps, replayImpactedTraffic } from "./replayTraffic.js";
+import {
+  buildActionSummary,
+  logAction,
+  resetActionLog,
+  type DeployAction,
+} from "./actionLog.js";
 
 export interface KubeDeployInput {
   manifest: string;
@@ -45,6 +55,8 @@ export interface DeployProgress {
 export interface KubeDeployResult {
   outcome: "success" | "failure" | "dry_run";
   phases: DeployProgress[];
+  actions: DeployAction[];
+  actionSummary: string;
   manifestSummary?: ReturnType<typeof parseManifestSummary>;
   applyResult?: unknown;
   podStatus?: PodStatusSummary;
@@ -55,6 +67,8 @@ export interface KubeDeployResult {
   impactedApps?: string[];
   replayResults?: unknown;
   memoryRecordId?: string;
+  slackChannel?: string;
+  pagerDutyIncidentId?: string;
 }
 
 function progress(phase: string, message: string): DeployProgress {
@@ -112,36 +126,58 @@ export async function runDeploy(
   input: KubeDeployInput,
 ): Promise<KubeDeployResult> {
   const phases: DeployProgress[] = [];
+  const actions: DeployAction[] = [];
+  resetActionLog();
   const workspaceId = ctx.workspaceId.toString();
   const summary = parseManifestSummary(input.manifest);
   const namespace = input.namespace ?? summary.namespace ?? "default";
   const serviceName = input.serviceName ?? summary.serviceName ?? summary.deploymentName ?? "unknown";
-  const watchDurationSec = input.watchDurationSec ?? 300;
-  const pollIntervalSec = input.pollIntervalSec ?? 15;
+  const watchDurationSec = input.watchDurationSec ?? 90;
+  const pollIntervalSec = input.pollIntervalSec ?? 10;
 
   phases.push(progress("pre_deploy", `Scanning manifest: ${summary.kinds.join(", ")} in ${namespace}`));
+  actions.push(logAction("pre_deploy", "scan_manifest", "ok", `${summary.kinds.join(", ")} in ${namespace}`));
   if (summary.memoryLimit) {
     phases.push(progress("pre_deploy", `Memory limit: ${summary.memoryLimit}${summary.memoryLeak ? " (MEMORY_LEAK enabled)" : ""}`));
   }
 
-  const recall = await recallMemory(
-    { datasetName: ctx.datasetName },
-    { query: `Past failures OOM for ${serviceName} in ${namespace}`, topK: 5 },
-  );
-  const riskScore = scoreRecallSimilarity(recall.matches);
-  const riskReason =
-    riskScore >= 0.6
-      ? `High risk: ${recall.matches.length} similar past events`
-      : riskScore >= 0.3
-        ? "Moderate risk: some related history"
-        : "Low risk: no strong memory matches";
-  phases.push(progress("pre_deploy", `Risk score: ${riskScore.toFixed(2)} — ${riskReason}`));
+  const recallQuery = `Past failures OOM for ${serviceName} in ${namespace}`;
+  let recall: RecallResult = { query: recallQuery, matches: [], datasetName: ctx.datasetName };
+  let riskScore = 0;
+  let riskReason = "Low risk: no strong memory matches";
+  let cogneeSkipped = false;
+
+  try {
+    recall = await recallMemory(
+      { datasetName: ctx.datasetName },
+      { query: recallQuery, topK: 5 },
+    );
+    riskScore = scoreRecallSimilarity(recall.matches);
+    riskReason =
+      riskScore >= 0.6
+        ? `High risk: ${recall.matches.length} similar past events`
+        : riskScore >= 0.3
+          ? "Moderate risk: some related history"
+          : "Low risk: no strong memory matches";
+    phases.push(progress("pre_deploy", `Risk score: ${riskScore.toFixed(2)} — ${riskReason}`));
+    actions.push(logAction("pre_deploy", "predict_risk", "ok", `score=${riskScore.toFixed(2)}`));
+  } catch (err) {
+    cogneeSkipped = true;
+    const msg = err instanceof Error ? err.message : String(err);
+    riskReason = "Cognee unavailable — risk scoring skipped";
+    phases.push(progress("pre_deploy", `Risk score: skipped — ${msg}`));
+    actions.push(logAction("pre_deploy", "predict_risk", "skipped", msg));
+  }
 
   if (input.dryRun) {
     phases.push(progress("apply", "Dry run — manifest not applied"));
+    actions.push(logAction("apply", "k8s_apply_manifest", "skipped", "dryRun=true"));
+    const actionSummary = buildActionSummary(actions, phases, { outcome: "dry_run" });
     return {
       outcome: "dry_run",
       phases,
+      actions,
+      actionSummary,
       manifestSummary: summary,
       riskScore,
       riskReason,
@@ -157,6 +193,14 @@ export async function runDeploy(
     progress(
       "apply",
       `Applied ${applyResult.applied.length} resource(s): ${applyResult.applied.map((r) => `${r.kind}/${r.name}`).join(", ")}`,
+    ),
+  );
+  actions.push(
+    logAction(
+      "apply",
+      "k8s_apply_manifest",
+      applyResult.applied.length ? "ok" : "failed",
+      applyResult.applied.map((r) => `${r.kind}/${r.name} (${r.action})`).join(", "),
     ),
   );
 
@@ -224,9 +268,14 @@ export async function runDeploy(
       // optional
     }
 
+    actions.push(logAction("success", "memory_remember", memoryRecordId ? "ok" : "skipped"));
+
+    const actionSummary = buildActionSummary(actions, phases, { outcome: "success", memoryRecordId });
     return {
       outcome: "success",
       phases,
+      actions,
+      actionSummary,
       manifestSummary: summary,
       applyResult,
       podStatus,
@@ -237,6 +286,7 @@ export async function runDeploy(
   }
 
   phases.push(progress("failure", "Failure detected — starting incident pipeline"));
+  actions.push(logAction("watch", "detect_failure", "ok", podStatus?.name ?? "unknown pod"));
 
   const podName = podStatus?.name ?? input.podName ?? summary.podName;
   let logs = "";
@@ -250,9 +300,17 @@ export async function runDeploy(
 
   const events = await listEvents({ workspaceId, namespace }).catch(() => []);
   phases.push(progress("diagnose", `Fetched logs (${logs.length} chars) and ${events.length} events`));
+  actions.push(logAction("diagnose", "k8s_pod_logs + k8s_get_events", "ok", `${events.length} events`));
 
   const memoryMatches = recall.matches.map((m) => m.text).join("\n---\n");
-  phases.push(progress("diagnose", `Cognee recall: ${recall.matches.length} similar episode(s)`));
+  phases.push(
+    progress(
+      "diagnose",
+      cogneeSkipped
+        ? "Cognee recall skipped — API unavailable"
+        : `Cognee recall: ${recall.matches.length} similar episode(s)`,
+    ),
+  );
 
   const impactedApps = await detectImpactedApps({
     workspaceId,
@@ -267,10 +325,14 @@ export async function runDeploy(
     manifestYaml: defaultStableServiceManifest(namespace),
     namespace,
   });
+  actions.push(logAction("mitigate", "k8s_apply_manifest (stable service)", "ok", "selector version=stable"));
 
   const deletedPods = await deleteCanaryPods(workspaceId, namespace, summary.labelSelector);
   if (deletedPods.length) {
     phases.push(progress("mitigate", `Deleted canary pod(s): ${deletedPods.join(", ")}`));
+    actions.push(logAction("mitigate", "k8s_delete_pod", "ok", deletedPods.join(", ")));
+  } else {
+    actions.push(logAction("mitigate", "k8s_delete_pod", "skipped", "no canary pods found"));
   }
 
   const incident = await openIncident(ctx, {
@@ -289,6 +351,14 @@ export async function runDeploy(
   });
 
   phases.push(progress("incident", `Opened incident ${incident.incidentId}`));
+  actions.push(
+    logAction(
+      "incident",
+      "incident_open",
+      "ok",
+      `id=${incident.incidentId} slack=${incident.slackChannel ?? "n/a"} pd=${incident.pagerDutyIncidentId ?? "skipped"}`,
+    ),
+  );
 
   let fixPrUrl: string | undefined;
   if (input.stableManifest) {
@@ -306,6 +376,7 @@ export async function runDeploy(
       if (pr) {
         fixPrUrl = pr.prUrl;
         phases.push(progress("fix_pr", `Created fix PR: ${fixPrUrl}`));
+        actions.push(logAction("fix_pr", "github_create_pull_request", "ok", fixPrUrl));
 
         await updateIncident(
           { workspaceId: ctx.workspaceId, datasetName: ctx.datasetName },
@@ -320,12 +391,13 @@ export async function runDeploy(
         );
       }
     } catch (err) {
-      phases.push(
-        progress("fix_pr", `PR creation skipped: ${err instanceof Error ? err.message : String(err)}`),
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      phases.push(progress("fix_pr", `PR creation skipped: ${msg}`));
+      actions.push(logAction("fix_pr", "github_create_pull_request", "failed", msg));
     }
   } else {
     phases.push(progress("fix_pr", "No stableManifest provided — skipped automated PR"));
+    actions.push(logAction("fix_pr", "github_create_pull_request", "skipped", "no stableManifest"));
   }
 
   let replayResults: unknown;
@@ -340,8 +412,11 @@ export async function runDeploy(
         `Replayed traffic on stable instances — success=${(replayResults as { successCount?: number }).successCount ?? 0}`,
       ),
     );
+    actions.push(logAction("replay", "replay_impacted_traffic", "ok"));
   } catch (err) {
-    phases.push(progress("replay", `Replay skipped: ${err instanceof Error ? err.message : String(err)}`));
+    const msg = err instanceof Error ? err.message : String(err);
+    phases.push(progress("replay", `Replay skipped: ${msg}`));
+    actions.push(logAction("replay", "replay_impacted_traffic", "failed", msg));
   }
 
   phases.push(progress("resolve", "Waiting for stable pod health..."));
@@ -369,10 +444,22 @@ export async function runDeploy(
   );
 
   phases.push(progress("complete", "Incident resolved and recorded in Cognee"));
+  actions.push(logAction("resolve", "incident_update", "ok", "status=resolved"));
+
+  const actionSummary = buildActionSummary(actions, phases, {
+    outcome: "failure",
+    incidentId: incident.incidentId,
+    fixPrUrl,
+    slackChannel: incident.slackChannel,
+    pagerDutyIncidentId: incident.pagerDutyIncidentId,
+    memoryRecordId: incident.memoryRecordId,
+  });
 
   return {
     outcome: "failure",
     phases,
+    actions,
+    actionSummary,
     manifestSummary: summary,
     applyResult,
     podStatus,
@@ -383,5 +470,7 @@ export async function runDeploy(
     impactedApps,
     replayResults,
     memoryRecordId: incident.memoryRecordId,
+    slackChannel: incident.slackChannel,
+    pagerDutyIncidentId: incident.pagerDutyIncidentId,
   };
 }

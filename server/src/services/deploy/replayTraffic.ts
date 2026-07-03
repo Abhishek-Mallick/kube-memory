@@ -67,13 +67,19 @@ export async function detectImpactedApps(options: {
   return [...apps];
 }
 
+const REPLAY_SCRIPT_INDENT = "              ";
+
+function indentReplayScript(lines: string[]): string {
+  return lines.map((line) => `${REPLAY_SCRIPT_INDENT}${line}`).join("\n");
+}
+
 function buildReplayJobManifest(
   namespace: string,
   targets: ReplayServiceTarget[],
   requestsPerService: number,
 ): string {
-  const script = targets
-    .flatMap((t) => {
+  const script = indentReplayScript(
+    targets.flatMap((t) => {
       const base = `http://${t.name}:${t.port}`;
       const health = t.healthPath ?? "/health";
       const order = t.orderPath ?? "/api/create-order";
@@ -83,11 +89,11 @@ function buildReplayJobManifest(
           `curl -sf -o /dev/null -w "${t.name} health %${i} -> %{http_code}\\n" ${base}${health} || echo "${t.name} health failed"`,
         ),
         ...Array.from({ length: requestsPerService }, (_, i) =>
-          `curl -sf -X POST -H "Content-Type: application/json" -d '{"orderId":"replay-${i}"}' -o /dev/null -w "${t.name} order %${i} -> %{http_code}\\n" ${base}${order} || echo "${t.name} order failed"`,
+          `curl -sf -X POST -H "Content-Type: application/json" -d "{\\"orderId\\":\\"replay-${i}\\"}" -o /dev/null -w "${t.name} order %${i} -> %{http_code}\\n" ${base}${order} || echo "${t.name} order failed"`,
         ),
       ];
-    })
-    .join("\n");
+    }),
+  );
 
   const jobName = `kube-memory-replay-${Date.now()}`;
 

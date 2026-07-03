@@ -52,12 +52,20 @@ export function summarizePodStatus(pod: k8s.V1Pod): PodStatusSummary {
   const reason = pod.status?.reason;
   const message = pod.status?.message;
 
-  const containers = (pod.status?.containerStatuses ?? []).map((c) => ({
-    name: c.name,
-    ready: c.ready,
-    restartCount: c.restartCount,
-    ...containerState(c.state),
-  }));
+  const containers = (pod.status?.containerStatuses ?? []).map((c) => {
+    const current = containerState(c.state);
+    const last = containerState(c.lastState);
+    const oomFromLast = last.oomKilled || last.reason === "OOMKilled";
+    const oomRestarting = (c.restartCount ?? 0) > 0 && oomFromLast;
+    return {
+      name: c.name,
+      ready: c.ready,
+      restartCount: c.restartCount,
+      ...current,
+      oomKilled: current.oomKilled || oomFromLast || oomRestarting,
+      reason: current.reason ?? (oomFromLast || oomRestarting ? "OOMKilled" : last.reason),
+    };
+  });
 
   const initContainers = (pod.status?.initContainerStatuses ?? []).map((c) => ({
     name: c.name,
@@ -69,8 +77,12 @@ export function summarizePodStatus(pod: k8s.V1Pod): PodStatusSummary {
   const allContainers = [...initContainers, ...containers];
   const oomKilled = allContainers.some((c) => c.oomKilled || c.reason === "OOMKilled");
   const crashLoop = allContainers.some((c) => c.reason === "CrashLoopBackOff");
+  const oomRestarting = allContainers.some(
+    (c) => (c.restartCount ?? 0) > 0 && (c.oomKilled || c.reason === "OOMKilled"),
+  );
   const failedPhase = phase === "Failed";
-  const terminalFailure = failedPhase || oomKilled || crashLoop || reason === "Evicted";
+  const terminalFailure =
+    failedPhase || oomKilled || crashLoop || oomRestarting || reason === "Evicted";
   const healthy =
     (phase === "Running" && allContainers.every((c) => c.ready !== false)) ||
     phase === "Succeeded";

@@ -101,7 +101,13 @@ export async function rememberMemory(
     record.status = "failed";
     record.errorMessage = error instanceof Error ? error.message : "Unknown error";
     await record.save();
-    throw error;
+    return {
+      status: "accepted",
+      recordId: record._id.toString(),
+      failureCategory,
+      datasetName: ctx.datasetName,
+      indexingStatus: "failed",
+    };
   }
 
   return {

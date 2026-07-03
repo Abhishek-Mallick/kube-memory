@@ -22,7 +22,7 @@ You are running the **kube-deploy** workflow: analyze a Kubernetes manifest, dep
 | `githubOwner` / `githubRepo` | No | `PAYMENT_SERVICE_GITHUB_OWNER` / `PAYMENT_SERVICE_GITHUB_REPO` env |
 | `slackChannel` | No | Workspace default |
 | `triggerPagerDuty` | No | `false` (set `true` for full demo) |
-| `watchDurationSec` | No | `300` (5 minutes) |
+| `watchDurationSec` | No | `120` (use `90` for quick demo; max 600) |
 
 Anything after `/kube-deploy` in the user message is additional context — use it.
 
@@ -50,12 +50,18 @@ Call **`kube_deploy`** once with:
   "githubRepo": "<optional>",
   "slackChannel": "<optional>",
   "triggerPagerDuty": true,
-  "watchDurationSec": 300,
+  "watchDurationSec": 90,
   "pollIntervalSec": 15
 }
 ```
 
-**While the tool runs** (up to 5 min), relay each phase from the returned `phases` array to the user in chat:
+**While the tool runs**, relay each phase to the user. When it completes, print the full **`actionSummary`** and **`actions`** array from the tool result — do not paraphrase.
+
+| Field | What to show |
+|-------|----------------|
+| `actions` | Numbered list of every step (scan, apply, watch, mitigate, incident, PR, replay, resolve) |
+| `actionSummary` | Markdown summary — paste verbatim for the user |
+| `phases` | Watch poll log with timestamps |
 
 | Phase | What to tell the user |
 |-------|-------------------------|
