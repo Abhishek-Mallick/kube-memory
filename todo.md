@@ -20,3 +20,42 @@
     - [ ] gcp_get_cluster
     - [x] gcp_query_metrics
     - [x] gcp_list_metric_descriptors
+
+
+1. kube-config.yml -> deployed
+2. kube-memory will analyze this -> use kube-memory to deploy -> kubectl deploy <>
+3. pod status
+
+failure -> OOM
+    3.a kuberneetes tools -> get logs, get pod status
+            check prometheus -> check alerts and get impacted applications
+    3.a.1 check cognee for past siilar failures and it's remediation
+    3.b remidiate/mitigate the issue -> last stable pod make it active
+    3.c analyse the issue -> found
+    3.d find who the on call engineer is
+    3.e create an incident from pagerDuty -> icnident id
+    3.f post an alert message on slack
+            tag the engineer with incident id
+    3.g use github tools -> to understand which commit / pr fcked up
+            find the fix -> do the fix -> raise a PR
+                add the PR link in the incident page
+    3.h wait for everuything to get fixed
+            replay the impacted applications
+
+success
+3.a post success event on slack
+3.b proceed deployment
+3.c clean (n-1) instances
+
+
+
+impacted applications
+POST /api/create-order failed 500 INTERNAL SERVER ERROR
+ header, payload   {}
+
+app_cpu: 2048
+app_memory : 4096
+
+
+prom_alerts
+/api -> 1 min -> 4$$ -> raise alert
