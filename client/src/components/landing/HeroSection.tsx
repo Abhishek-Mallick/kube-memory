@@ -1,12 +1,28 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { HeroMemoryVisual } from "@/components/landing/HeroMemoryVisual";
+import { LogoLoop } from "../LogoLoop";
+import antigravitylogo from "@/assets/images/antigravity.png"
+import claudecodelogo from "@/assets/images/claudecode.png"
+import codexlogo from "@/assets/images/codex.png"
+import cursorlogo from "@/assets/images/cursor.png"
+import vscodelogo from "@/assets/images/vscode.png"
+import claudelogo from "@/assets/images/claude.png"
 
 interface HeroSectionProps {
   onGetStarted: () => void;
   onSignIn: () => void;
   isAuthenticated: boolean;
 }
+
+const imageLogos = [
+  { src: antigravitylogo, alt: "Antigravity", href: "https://kube-memory.buildlab.in/docs?tab=ide" },
+  { src: claudecodelogo, alt: "Claude Code", href: "https://kube-memory.buildlab.in/docs?tab=llm" },
+  { src: codexlogo, alt: "Codex", href: "https://kube-memory.buildlab.in/docs?tab=codex" },
+  { src: cursorlogo, alt: "Cursor", href: "https://kube-memory.buildlab.in/docs?tab=cursor" },
+  { src: vscodelogo, alt: "VS Code", href: "https://kube-memory.buildlab.in/docs?tab=vscode" },
+  { src: claudelogo, alt: "Claude", href: "https://kube-memory.buildlab.in/docs?tab=claude" },
+];
 
 export function HeroSection({ onGetStarted, onSignIn, isAuthenticated }: HeroSectionProps) {
   return (
@@ -42,6 +58,20 @@ export function HeroSection({ onGetStarted, onSignIn, isAuthenticated }: HeroSec
               <Link to="/docs">Documentation</Link>
             </Button>
           </div>
+          <p className="font-heading text-xs uppercase tracking-[0.18em] text-[var(--color-accent-signal)]">
+            Supporting IDE and LLM agents
+          </p>
+          <LogoLoop
+            logos={imageLogos}
+            speed={50}
+            direction="left"
+            logoHeight={40}
+            gap={70}
+            hoverSpeed={0}
+            scaleOnHover={false}
+            fadeOut
+            ariaLabel="Technology partners"
+          />
         </div>
         <HeroMemoryVisual />
       </div>

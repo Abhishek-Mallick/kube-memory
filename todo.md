@@ -72,7 +72,6 @@ prom_alerts
     - how to use and integrate commands
 - publish this mcp in open registries (5-6) 
     update these links in README -> https://smithery.ai/, awesome mcp, runstack integration
-- /docs?tab=ide -> add images of supported clients(Cursor, Vs code, claude-code)
 - Update readme for "MCP tool Catalog"
     ```
 <details>

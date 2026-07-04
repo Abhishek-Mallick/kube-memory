@@ -13,7 +13,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CopyButton } from "@/components/dashboard/CopyButton";
 import { ConnectorIcon } from "@/components/dashboard/ConnectorIcon";
 import { getMcpEndpointUrl } from "@/lib/api";
+import githublogo from "@/assets/images/GitHub.png"
+import antigravitylogo from "@/assets/images/antigravity.png"
+import claudecodelogo from "@/assets/images/claudecode.png"
+import codexlogo from "@/assets/images/codex.png"
+import cursorlogo from "@/assets/images/cursor.png"
+import vscodelogo from "@/assets/images/vscode.png"
+import claudelogo from "@/assets/images/claude.png"
 import "@/styles/landing.css";
+import { AuthDialog } from "@/components/auth/AuthDialog";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 
 type ToolGroup = {
   id: string;
@@ -687,23 +697,158 @@ const setupSteps = [
   {
     step: "4",
     title: "Configure your IDE",
-    body: "Paste the MCP JSON into Cursor, VS Code, or Claude Desktop with your km_* key.",
+    body: "Paste the MCP config into Cursor, VS Code, Antigravity, Claude Desktop, Claude Code, or Codex with your km_* key.",
   },
 ];
 
-function mcpSnippet() {
-  return JSON.stringify(
-    {
-      mcpServers: {
-        "kube-memory": {
-          url: getMcpEndpointUrl(),
-          headers: { Authorization: "Bearer km_your_api_key_here" },
-        },
-      },
-    },
-    null,
-    2,
-  );
+const IDE_CLIENT_IDS = ["antigravity", "cursor", "vscode", "claude", "claude-code", "codex"] as const;
+type IdeClientId = (typeof IDE_CLIENT_IDS)[number];
+
+const IDE_TAB_TO_CLIENT: Record<string, IdeClientId> = {
+  ide: "antigravity",
+  cursor: "cursor",
+  vscode: "vscode",
+  claude: "claude",
+  llm: "claude-code",
+  codex: "codex",
+};
+
+const IDE_CLIENT_TO_TAB: Record<IdeClientId, string> = {
+  antigravity: "ide",
+  cursor: "cursor",
+  vscode: "vscode",
+  claude: "claude",
+  "claude-code": "llm",
+  codex: "codex",
+};
+
+const IDE_CLIENT_TABS = Object.keys(IDE_TAB_TO_CLIENT);
+
+type IdeClient = {
+  id: IdeClientId;
+  label: string;
+  logo: string;
+  configPath: string;
+  format: "json" | "toml";
+  steps: string[];
+  hint: string;
+};
+
+const ideClients: IdeClient[] = [
+  {
+    id: "antigravity",
+    label: "Antigravity",
+    logo: antigravitylogo,
+    configPath: "~/.gemini/config/mcp_config.json (or .agents/mcp_config.json in workspace)",
+    format: "json",
+    hint: "Agent panel → … → MCP Servers → Manage MCP Servers → View raw config. Uses serverUrl for remote HTTP servers.",
+    steps: [
+      "Open Manage MCP Servers → View raw config",
+      "Add the kube-memory entry under mcpServers",
+      "Save and refresh MCP servers in Customizations",
+      "Ask the agent to call kube_memory_status to verify tools load",
+    ],
+  },
+  {
+    id: "cursor",
+    label: "Cursor",
+    logo: cursorlogo,
+    configPath: ".cursor/mcp.json (project) or ~/.cursor/mcp.json (global)",
+    format: "json",
+    hint: "Cmd+Shift+P → View: Open MCP Settings, or edit mcp.json directly. Restart Cursor after saving.",
+    steps: [
+      "Open MCP Settings or create mcp.json",
+      "Paste the config below",
+      "Restart Cursor",
+      "Verify kube_memory_status in the MCP tools panel",
+    ],
+  },
+  {
+    id: "vscode",
+    label: "VS Code",
+    logo: vscodelogo,
+    configPath: ".vscode/mcp.json (workspace) or user-level MCP config",
+    format: "json",
+    hint: "Requires GitHub Copilot with MCP support. Reload the window after editing mcp.json.",
+    steps: [
+      "Create or open .vscode/mcp.json",
+      "Paste the config below",
+      "Reload window (Cmd+Shift+P → Developer: Reload Window)",
+      "Open Copilot MCP panel and confirm kube-memory tools appear",
+    ],
+  },
+  {
+    id: "claude",
+    label: "Claude Desktop",
+    logo: claudelogo,
+    configPath: "~/Library/Application Support/Claude/claude_desktop_config.json (macOS)",
+    format: "json",
+    hint: "Windows: %APPDATA%\\Claude\\claude_desktop_config.json. Fully quit and reopen Claude after saving.",
+    steps: [
+      "Open claude_desktop_config.json",
+      "Add kube-memory under mcpServers",
+      "Restart Claude Desktop",
+      "Check that MCP tools are listed in a new chat",
+    ],
+  },
+  {
+    id: "claude-code",
+    label: "Claude Code",
+    logo: claudecodelogo,
+    configPath: ".mcp.json (project root, shared via git) or ~/.claude.json (user scope)",
+    format: "json",
+    hint: "Use --scope project with claude mcp add, or edit .mcp.json directly. Supports ${VAR} for API keys.",
+    steps: [
+      "Create .mcp.json in your project root",
+      "Paste the config below (use ${KUBE_MEMORY_API_KEY} for secrets)",
+      "Start a new Claude Code session in the project",
+      "Run claude mcp list or ask the agent to call kube_memory_status",
+    ],
+  },
+  {
+    id: "codex",
+    label: "Codex",
+    logo: codexlogo,
+    configPath: "~/.codex/config.toml (or .codex/config.toml in trusted projects)",
+    format: "toml",
+    hint: "MCP settings → Open config.toml, or run codex mcp add. Use bearer_token_env_var — not the raw token.",
+    steps: [
+      "Open ~/.codex/config.toml",
+      "Add the [mcp_servers.kube-memory] block below",
+      "export KUBE_MEMORY_API_KEY=km_your_key in your shell",
+      "Launch Codex and confirm tools load via codex mcp list",
+    ],
+  },
+];
+
+function mcpJsonSnippet(opts?: { serverUrl?: boolean; claudeCode?: boolean }) {
+  const endpoint = getMcpEndpointUrl();
+  const auth = opts?.claudeCode
+    ? "Bearer ${KUBE_MEMORY_API_KEY:-km_your_api_key_here}"
+    : "Bearer km_your_api_key_here";
+
+  const server = opts?.serverUrl
+    ? { serverUrl: endpoint, headers: { Authorization: auth } }
+    : opts?.claudeCode
+      ? { type: "http", url: endpoint, headers: { Authorization: auth } }
+      : { url: endpoint, headers: { Authorization: auth } };
+
+  return JSON.stringify({ mcpServers: { "kube-memory": server } }, null, 2);
+}
+
+function codexTomlSnippet() {
+  const endpoint = getMcpEndpointUrl();
+  return `[mcp_servers.kube-memory]
+url = "${endpoint}"
+bearer_token_env_var = "KUBE_MEMORY_API_KEY"
+enabled = true`;
+}
+
+function ideClientSnippet(id: IdeClientId) {
+  if (id === "antigravity") return mcpJsonSnippet({ serverUrl: true });
+  if (id === "claude-code") return mcpJsonSnippet({ claudeCode: true });
+  if (id === "codex") return codexTomlSnippet();
+  return mcpJsonSnippet();
 }
 
 const DOC_TABS = ["setup", "connectors", "tools", "workflows", "ide", "api"] as const;
@@ -712,10 +857,14 @@ type DocTab = (typeof DOC_TABS)[number];
 const CONNECTOR_TYPES = connectorSetup.map((c) => c.type);
 
 function parseDocTab(value: string | null): DocTab {
-  if (value && DOC_TABS.includes(value as DocTab)) {
-    return value as DocTab;
-  }
+  if (value && IDE_CLIENT_TABS.includes(value)) return "ide";
+  if (value && DOC_TABS.includes(value as DocTab)) return value as DocTab;
   return "setup";
+}
+
+function parseIdeClient(value: string | null): IdeClientId {
+  if (value && value in IDE_TAB_TO_CLIENT) return IDE_TAB_TO_CLIENT[value];
+  return "antigravity";
 }
 
 function parseConnector(value: string | null): string | undefined {
@@ -729,11 +878,26 @@ export function DocsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = parseDocTab(searchParams.get("tab"));
   const activeConnector = parseConnector(searchParams.get("connector"));
+  const activeIdeClient = parseIdeClient(searchParams.get("tab"));
   const [activeGroup, setActiveGroup] = useState(toolGroups[0].id);
   const [activeTool, setActiveTool] = useState(allTools[0].name);
   const group = toolGroups.find((g) => g.id === activeGroup) ?? toolGroups[0];
   const selected = group.tools.find((t) => t.name === activeTool) ?? group.tools[0];
-  const snippet = mcpSnippet();
+
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "register">("register");
+  const token = useSelector((state: RootState) => state.auth.token);
+  const isAuthenticated = Boolean(token);
+
+  function openRegister() {
+    setAuthTab("register");
+    setAuthOpen(true);
+  }
+
+  function openLogin() {
+    setAuthTab("login");
+    setAuthOpen(true);
+  }
 
   function selectGroup(id: string) {
     setActiveGroup(id);
@@ -746,12 +910,23 @@ export function DocsPage() {
     if (value === "setup") {
       next.delete("tab");
       next.delete("connector");
+    } else if (value === "ide") {
+      next.set("tab", IDE_CLIENT_TO_TAB[activeIdeClient] ?? "ide");
+      next.delete("connector");
     } else {
       next.set("tab", value);
       if (value !== "connectors") {
         next.delete("connector");
       }
     }
+    setSearchParams(next, { replace: true });
+  }
+
+  function handleIdeClientChange(value: string) {
+    const next = new URLSearchParams(searchParams);
+    const client = ideClients.find((c) => c.id === value);
+    next.set("tab", client ? IDE_CLIENT_TO_TAB[client.id] : "ide");
+    next.delete("connector");
     setSearchParams(next, { replace: true });
   }
 
@@ -773,12 +948,23 @@ export function DocsPage() {
           <AppLogo />
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/">Home</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/dashboard">Dashboard</Link>
-            </Button>
+            <a href="https://github.com/Abhishek-Mallick/kube-memory" target="_blank" rel="noopener noreferrer">
+              <img src={githublogo} alt="GitHub" className="w-4 h-4 dark:invert" />
+            </a>
+            {isAuthenticated ? (
+              <Button asChild size="sm">
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={openLogin}>
+                  Sign in
+                </Button>
+                <Button size="sm" onClick={openRegister}>
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -1091,34 +1277,78 @@ export function DocsPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="ide" className="space-y-4">
-            <Accordion type="single" collapsible defaultValue="cursor">
-              <AccordionItem value="cursor">
-                <AccordionTrigger>Cursor</AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Open Settings → MCP → Add server. Paste the config below and restart Cursor.</p>
-                  <CopyButton value={snippet} label="Copy config" toastMessage="Config copied" />
-                  <pre className="code-block overflow-x-auto whitespace-pre">{snippet}</pre>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="vscode">
-                <AccordionTrigger>VS Code</AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>Add to .vscode/mcp.json or your user-level MCP configuration file.</p>
-                  <pre className="code-block overflow-x-auto whitespace-pre">{snippet}</pre>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="claude">
-                <AccordionTrigger>Claude Desktop</AccordionTrigger>
-                <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                  <p>
-                    Edit claude_desktop_config.json (macOS: ~/Library/Application Support/Claude/).
-                    Restart the app after saving.
-                  </p>
-                  <pre className="code-block overflow-x-auto whitespace-pre">{snippet}</pre>
-                </AccordionContent>
-              </AccordionItem>
+          <TabsContent value="ide" className="space-y-6">
+            <div className="rounded-xl border bg-card p-5 space-y-3">
+              <h3 className="font-heading font-medium">Supported clients</h3>
+              <p className="text-sm text-muted-foreground">
+                kube-memory exposes a streamable HTTP MCP endpoint. Create an API key in the dashboard, then paste the
+                config for your IDE. Replace <code className="font-mono text-xs">km_your_api_key_here</code> or set{" "}
+                <code className="font-mono text-xs">KUBE_MEMORY_API_KEY</code> in your environment.
+              </p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {ideClients.map((client) => (
+                  <button
+                    key={client.id}
+                    type="button"
+                    onClick={() => handleIdeClientChange(client.id)}
+                    className={`flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors hover:bg-muted/40 ${
+                      activeIdeClient === client.id ? "border-[var(--color-accent-signal)] bg-muted/30" : "bg-muted/10"
+                    }`}
+                  >
+                    <img src={client.logo} alt={client.label} className="h-8 w-auto object-contain" />
+                    <span className="text-xs font-medium">{client.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Accordion
+              type="single"
+              collapsible
+              value={activeIdeClient}
+              onValueChange={handleIdeClientChange}
+            >
+              {ideClients.map((client) => {
+                const config = ideClientSnippet(client.id);
+                return (
+                  <AccordionItem key={client.id} value={client.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <img src={client.logo} alt={client.label} className="h-7 w-auto object-contain" />
+                        <div>
+                          <p className="font-heading font-medium">{client.label}</p>
+                          <p className="text-xs font-normal text-muted-foreground">{client.configPath}</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pb-5">
+                      <p className="text-sm text-muted-foreground">{client.hint}</p>
+                      <ol className="grid gap-2 sm:grid-cols-2">
+                        {client.steps.map((step, i) => (
+                          <li
+                            key={step}
+                            className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+                          >
+                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-[10px] font-medium text-foreground">
+                              {i + 1}
+                            </span>
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {client.format === "toml" ? "config.toml" : "mcp.json"}
+                        </p>
+                        <CopyButton value={config} label="Copy config" toastMessage="Config copied" />
+                      </div>
+                      <pre className="code-block overflow-x-auto whitespace-pre">{config}</pre>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
             </Accordion>
+
             <div className="rounded-xl border bg-card p-5 space-y-3">
               <h3 className="font-heading font-medium">Cursor slash commands</h3>
               <p className="text-sm text-muted-foreground">
@@ -1188,6 +1418,8 @@ export function DocsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} defaultTab={authTab} />
 
       <footer className="landing-footer">kube-memory documentation</footer>
     </div>

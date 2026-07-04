@@ -16,7 +16,7 @@ export function AppLogo({ className }: AppLogoProps) {
       )}
     >
       <img src={logo} alt="kube-memory" className="h-6 w-6 dark:invert" />
-      kube-memory
+      <span className="md:block hidden">kube-memory</span>
     </Link>
   );
 }
