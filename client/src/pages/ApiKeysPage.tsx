@@ -281,7 +281,7 @@ export function ApiKeysPage() {
           <AlertDialogFooter className="gap-3 sm:gap-4">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              variant="destructive"
               onClick={handleRevoke}
             >
               Revoke

@@ -978,14 +978,16 @@ export function DocsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-12 w-full">
-          <TabsList className="mb-8 h-9 w-fit flex-wrap">
-            <TabsTrigger value="setup">Getting started</TabsTrigger>
-            <TabsTrigger value="connectors">Integrations</TabsTrigger>
-            <TabsTrigger value="tools">MCP tools</TabsTrigger>
-            <TabsTrigger value="workflows">Workflows</TabsTrigger>
-            <TabsTrigger value="ide">IDE setup</TabsTrigger>
-            <TabsTrigger value="api">REST API</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto no-scrollbar mb-8">
+            <TabsList className="h-9 w-fit flex-nowrap whitespace-nowrap">
+              <TabsTrigger value="setup">Getting started</TabsTrigger>
+              <TabsTrigger value="connectors">Integrations</TabsTrigger>
+              <TabsTrigger value="tools">MCP tools</TabsTrigger>
+              <TabsTrigger value="workflows">Workflows</TabsTrigger>
+              <TabsTrigger value="ide">IDE setup</TabsTrigger>
+              <TabsTrigger value="api">REST API</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="setup" className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1199,7 +1201,7 @@ export function DocsPage() {
                   </AccordionItem>
                 ))}
               </Accordion>
-              <div className="rounded-xl border bg-card p-5">
+              <div className="p-5">
                 <h3 className="font-mono text-sm font-medium">{selected.name}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{selected.description}</p>
                 {selected.role && (

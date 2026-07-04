@@ -41,6 +41,7 @@ failure -> OOM
                 add the PR link in the incident page
     3.h wait for everuything to get fixed
             replay the impacted applications
+            
 
 success
 3.a post success event on slack
@@ -66,8 +67,8 @@ prom_alerts
 
 @soumya
 - Describe how you have used Cognee in your project
-- Connect integration -> Create API key -> Set up IDE (center)
-- remove card background - https://kube-memory.buildlab.in/docs?tab=tools
+[x] Connect integration -> Create API key -> Set up IDE (center)
+[x] remove card background - https://kube-memory.buildlab.in/docs?tab=tools
 - publish this mcp in open registries (5-6) 
     update these links in README -> https://smithery.ai/, awesome mcp, runstack integration
 - Update readme for "MCP tool Catalog"
