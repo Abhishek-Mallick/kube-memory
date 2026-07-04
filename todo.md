@@ -66,12 +66,12 @@ prom_alerts
 
 
 @soumya
-- Describe how you have used Cognee in your project
+[x] Describe how you have used Cognee in your project
 [x] Connect integration -> Create API key -> Set up IDE (center)
 [x] remove card background - https://kube-memory.buildlab.in/docs?tab=tools
 - publish this mcp in open registries (5-6) 
     update these links in README -> https://smithery.ai/, awesome mcp, runstack integration
-- Update readme for "MCP tool Catalog"
+[x] Update readme for "MCP tool Catalog"
     ```
 <details>
 <summary>Prerequisites</summary>

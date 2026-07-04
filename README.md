@@ -68,6 +68,16 @@ The same memory graph agents use in the IDE is available at `https://kube.buildl
 
 ---
 
+## How we use Cognee in kube-memory
+
+Cognee is the memory layer behind the product. kube-memory stores incidents, deploy outcomes, remediation notes, and runbooks as reusable episodes, then uses semantic recall to surface the most relevant past failures before a new deploy or incident response.
+
+That turns every fix into future context. When an OOM kill, bad rollout, or config drift shows up again, the agent can look up similar history, compare the symptoms, and reuse the remediation instead of starting from scratch. Once the issue is resolved, the outcome is written back so the next agent session has better starting context.
+
+In practice, Cognee powers the `memory_recall`, `memory_remember`, and `predict_risk` workflow exposed through the MCP server and dashboard.
+
+---
+
 ## How to get started
 
 1. Open the dashboard → [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/)
@@ -101,7 +111,8 @@ Requires admin `km_*` key, Kubernetes + Slack connectors; GitHub write PAT for a
 
 Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace API key. Availability depends on which integrations you have enabled.
 
-### Memory
+<details>
+<summary>Memory</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -111,7 +122,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `memory_forget` | admin | Remove stale or sensitive memory |
 | `predict_risk` | reader+ | Score deploy risk from recall similarity |
 
-### Kubernetes
+</details>
+
+<details>
+<summary>Kubernetes</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -127,7 +141,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `incident_list` | reader+ | List workspace incidents |
 | `incident_update` | admin | Update status and notify Slack |
 
-### GitHub
+</details>
+
+<details>
+<summary>GitHub</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -142,7 +159,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `github_create_or_update_file` | admin | Commit a file change |
 | `github_create_pull_request` | admin | Open a fix PR (kube-memory bot) |
 
-### Slack
+</details>
+
+<details>
+<summary>Slack</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -153,7 +173,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `slack_list_users` | reader+ | List Slack users visible to the bot |
 | `slack_post_message` | admin | Post a message to a channel |
 
-### PagerDuty
+</details>
+
+<details>
+<summary>PagerDuty</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -165,7 +188,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `pagerduty_list_oncalls` | reader+ | List who is currently on call |
 | `pagerduty_list_users` | reader+ | List PagerDuty users |
 
-### Prometheus
+</details>
+
+<details>
+<summary>Prometheus</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -178,7 +204,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `prometheus_list_labels` | reader+ | List metric label names |
 | `prometheus_list_label_values` | reader+ | List values for a metric label |
 
-### ArgoCD
+</details>
+
+<details>
+<summary>ArgoCD</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -192,7 +221,10 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `argocd_sync_application` | admin | Trigger a sync |
 | `argocd_rollback_application` | admin | Roll back to a previous revision |
 
-### Google Cloud
+</details>
+
+<details>
+<summary>Google Cloud</summary>
 
 | Tool | Access | Description |
 |------|--------|-------------|
@@ -204,6 +236,8 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `gcp_query_logs` | reader+ | Query Cloud Logging entries |
 | `gcp_list_metric_descriptors` | reader+ | List Cloud Monitoring metric descriptors |
 | `gcp_query_metrics` | reader+ | Query Cloud Monitoring metrics |
+
+</details>
 
 ---
 
