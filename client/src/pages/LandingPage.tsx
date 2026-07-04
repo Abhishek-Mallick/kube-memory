@@ -9,6 +9,7 @@ import { HeroSection } from "@/components/landing/HeroSection";
 import type { RootState } from "@/store";
 import { AppLogo } from "@/components/AppLogo";
 import "@/styles/landing.css";
+import githublogo from "@/assets/images/GitHub.png"
 
 export function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -41,6 +42,9 @@ export function LandingPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <a href="https://github.com/Abhishek-Mallick/kube-memory" target="_blank" rel="noopener noreferrer">
+              <img src={githublogo} alt="GitHub" className="w-4 h-4 dark:invert" />
+            </a>
             {isAuthenticated ? (
               <Button asChild size="sm">
                 <Link to="/dashboard">Dashboard</Link>
