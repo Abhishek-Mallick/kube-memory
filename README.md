@@ -8,12 +8,13 @@ Every episode follows a simple loop: detect a symptom, diagnose the cause, apply
 
 ---
 
-## Deployed URLs
+## Links
 
 | Surface | URL | Purpose |
 |---------|-----|---------|
 | **Dashboard (client)** | [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/) | Sign up, connect integrations, manage API keys, IDE setup |
 | **API server** | [https://kube.buildlab.in/](https://kube.buildlab.in/) | MCP (`POST /mcp`), REST (`/ingest`, `/memory/query`, `/status`), health |
+| **Medium Blog** | [Blog](https://medium.com/@mallickabhishek97/an-mcp-that-debugs-kubernetes-for-you-powered-by-cogneecloud-0d768d384b01?sharedUserId=mallickabhishek97) | |
 
 **MCP endpoint for IDE config:** `https://kube.buildlab.in/mcp`
 
