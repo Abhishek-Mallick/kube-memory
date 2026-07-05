@@ -15,6 +15,7 @@ Every episode follows a simple loop: detect a symptom, diagnose the cause, apply
 | **Dashboard (client)** | [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/) | Sign up, connect integrations, manage API keys, IDE setup |
 | **API server** | [https://kube.buildlab.in/](https://kube.buildlab.in/) | MCP (`POST /mcp`), REST (`/ingest`, `/memory/query`, `/status`), health |
 | **Medium Blog** | [Blog](https://medium.com/@mallickabhishek97/an-mcp-that-debugs-kubernetes-for-you-powered-by-cogneecloud-0d768d384b01?sharedUserId=mallickabhishek97) | |
+| **Youtube Demo** | [Youtube](https://www.youtube.com/watch?v=-gbFnKiNeRI) | |
 
 **MCP endpoint for IDE config:** `https://kube.buildlab.in/mcp`
 
@@ -421,10 +422,3 @@ API keys are role-scoped: **reader** tools are read-only; **admin** can write me
 | [docs/setup.md](./docs/setup.md) | Local development setup |
 | [server/API_DOC.md](./server/API_DOC.md) | Complete REST and MCP API reference |
 | [server/.env.example](./server/.env.example) | Server configuration |
-| [PLAN.md](./PLAN.md) | Product vision and roadmap |
-
----
-
-## License
-
-See repository license file.
