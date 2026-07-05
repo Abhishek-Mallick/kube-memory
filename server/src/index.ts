@@ -66,7 +66,7 @@ export function createApp(): Express {
   app.use(connectorsRouter);
   app.use(apiKeysRouter);
 
-  app.post("/mcp", async (req: Request, res: Response) => {
+  app.all("/mcp", async (req: Request, res: Response) => {
     const auth = await resolveAuth(extractBearerToken(req));
     if (!auth) {
       if (!res.headersSent) {

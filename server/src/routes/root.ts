@@ -80,7 +80,7 @@ export const API_SECTIONS: ApiSection[] = [
     title: "MCP",
     description: "Model Context Protocol over Streamable HTTP. Requires workspace API key.",
     endpoints: [
-      { method: "POST", path: "/mcp", auth: "API key", description: "JSON-RPC 2.0 — tools/list, tools/call" },
+      { method: "GET/POST", path: "/mcp", auth: "API key", description: "Streamable HTTP — SSE (GET) and JSON-RPC 2.0 (POST)" },
     ],
   },
   {
