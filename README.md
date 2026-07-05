@@ -10,11 +10,14 @@ Every episode follows a simple loop: detect a symptom, diagnose the cause, apply
 
 ## Links
 
-| Surface | URL | Purpose |
-|---------|-----|---------|
-| **Dashboard (client)** | [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/) | Sign up, connect integrations, manage API keys, IDE setup |
-| **API server** | [https://kube.buildlab.in/](https://kube.buildlab.in/) | MCP (`POST /mcp`), REST (`/ingest`, `/memory/query`, `/status`), health |
-| **Medium Blog** | [Blog](https://medium.com/@mallickabhishek97/an-mcp-that-debugs-kubernetes-for-you-powered-by-cogneecloud-0d768d384b01?sharedUserId=mallickabhishek97) | |
+
+| Surface                | URL                                                                                                                                                    | Purpose                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **Dashboard (client)** | [https://kube-memory.buildlab.in/](https://kube-memory.buildlab.in/)                                                                                   | Sign up, connect integrations, manage API keys, IDE setup               |
+| **API server**         | [https://kube.buildlab.in/](https://kube.buildlab.in/)                                                                                                 | MCP (`POST /mcp`), REST (`/ingest`, `/memory/query`, `/status`), health |
+| **Medium Blog**        | [Blog](https://medium.com/@mallickabhishek97/an-mcp-that-debugs-kubernetes-for-you-powered-by-cogneecloud-0d768d384b01?sharedUserId=mallickabhishek97) |                                                                         |
+| **Youtube Demo**       | [Youtube](https://www.youtube.com/watch?v=-gbFnKiNeRI)                                                                                                 |                                                                         |
+
 
 **MCP endpoint for IDE config:** `https://kube.buildlab.in/mcp`
 
@@ -35,18 +38,26 @@ Issue the `km_*` key from the [dashboard](https://kube-memory.buildlab.in/) → 
 
 ---
 
+
+
 ## What kube-memory offers
+
+
 
 ### Semantic memory for agents
 
 Store and retrieve DevOps episodes through semantic search powered by [Cognee](https://www.cognee.ai/). Before acting on an alert or deploy, agents ask *"have we seen this before, and what fixed it?"* After resolving an incident, the outcome is written back for the next time.
 
-| Tool | What it does |
-|------|----------------|
+
+| Tool              | What it does                                                                  |
+| ----------------- | ----------------------------------------------------------------------------- |
 | `memory_remember` | Persist incidents, fixes, deploy outcomes, and runbooks into workspace memory |
-| `memory_recall` | Semantic search over past episodes — OOM kills, failed rollouts, config drift |
-| `memory_forget` | Remove stale or sensitive entries (admin) |
-| `predict_risk` | Score a planned deploy against similar past failures before you ship |
+| `memory_recall`   | Semantic search over past episodes — OOM kills, failed rollouts, config drift |
+| `memory_forget`   | Remove stale or sensitive entries (admin)                                     |
+| `predict_risk`    | Score a planned deploy against similar past failures before you ship          |
+
+
+
 
 ### MCP-native — one endpoint, every integration
 
@@ -58,7 +69,7 @@ Manage everything at [kube-memory.buildlab.in](https://kube-memory.buildlab.in/)
 
 1. **Sign up** — email/password or GitHub OAuth
 2. **Integrations** — connect Kubernetes, GitHub, Slack, PagerDuty, Prometheus, ArgoCD, or Google Cloud (test → save → enable)
-3. **API Keys** — issue `km_*` keys for IDE and automation (requires ≥1 integration)
+3. **API Keys** — issue `km_`* keys for IDE and automation (requires ≥1 integration)
 4. **IDE setup** — copy the MCP snippet from the API Keys page
 
 Each workspace is isolated: its own Cognee memory dataset, encrypted connector credentials, and role-scoped API keys (`reader`, `admin`).
@@ -69,6 +80,8 @@ The same memory graph agents use in the IDE is available at `https://kube.buildl
 
 ---
 
+
+
 ## How we use Cognee in kube-memory
 
 Cognee is the memory layer behind the product. kube-memory stores incidents, deploy outcomes, remediation notes, and runbooks as reusable episodes, then uses semantic recall to surface the most relevant past failures before a new deploy or incident response.
@@ -78,6 +91,8 @@ That turns every fix into future context. When an OOM kill, bad rollout, or conf
 In practice, Cognee powers the `memory_recall`, `memory_remember`, and `predict_risk` workflow exposed through the MCP server and dashboard.
 
 ---
+
+
 
 ## How to get started
 
@@ -90,157 +105,171 @@ Detailed walkthrough: [docs/mcp-tools.md](./docs/mcp-tools.md) · Interactive ca
 
 ---
 
+
+
 ## Deploy command (`/kube-deploy`)
 
-One Cursor slash command runs the full **deploy → monitor → incident → fix PR → replay → resolve** loop via the **`kube_deploy`** MCP orchestrator.
+One Cursor slash command runs the full **deploy → monitor → incident → fix PR → replay → resolve** loop via the `kube_deploy` MCP orchestrator.
 
 ```
 /kube-deploy @demos/payment-service/k8s/payment-service-canary.yaml stableManifest=@demos/payment-service/k8s/payment-service-canary-fixed.yaml
 ```
 
-- **Demo app:** [`demos/payment-service/`](demos/payment-service/) — real HTTP payment-service + order-api with OOM canary
+- **Demo app:** `[demos/payment-service/](demos/payment-service/)` — real HTTP payment-service + order-api with OOM canary
 - **Setup:** `./demos/payment-service/scripts/demo-setup.sh`
 - **Docs:** [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md) · [docs/mcp-tools.md](./docs/mcp-tools.md)
 
 Requires admin `km_*` key, Kubernetes + Slack connectors; GitHub write PAT for automated fix PRs.
 
-**Cursor command vs MCP:** `/kube-deploy` lives in [`.cursor/commands/`](.cursor/commands/) — it instructs the agent how to call the `kube_deploy` tool. The tool is on the MCP server; the slash command is optional repo sugar for demos.
+**Cursor command vs MCP:** `/kube-deploy` lives in `[.cursor/commands/](.cursor/commands/)` — it instructs the agent how to call the `kube_deploy` tool. The tool is on the MCP server; the slash command is optional repo sugar for demos.
 
 ---
+
+
 
 ## MCP tool catalog
 
 Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace API key. Availability depends on which integrations you have enabled.
 
-<details>
-<summary>Memory</summary>
+Memory
 
-| Tool | Access | Description |
-|------|--------|-------------|
+
+| Tool                 | Access  | Description                                   |
+| -------------------- | ------- | --------------------------------------------- |
 | `kube_memory_status` | reader+ | List enabled integrations and workspace hints |
-| `memory_remember` | admin | Store incident, deployment, or fix |
-| `memory_recall` | reader+ | Semantic search over past episodes |
-| `memory_forget` | admin | Remove stale or sensitive memory |
-| `predict_risk` | reader+ | Score deploy risk from recall similarity |
+| `memory_remember`    | admin   | Store incident, deployment, or fix            |
+| `memory_recall`      | reader+ | Semantic search over past episodes            |
+| `memory_forget`      | admin   | Remove stale or sensitive memory              |
+| `predict_risk`       | reader+ | Score deploy risk from recall similarity      |
 
-</details>
 
-<details>
-<summary>Kubernetes</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `k8s_pod_logs` | reader+ | Read pod logs from connected cluster |
-| `k8s_get_events` | reader+ | List cluster or namespace events |
-| `k8s_get_pod` | reader+ | Pod status with OOMKilled detection |
-| `k8s_apply_manifest` | admin | Apply YAML manifests |
-| `k8s_delete_pod` | admin | Delete a pod |
-| `kube_deploy` | admin | Full deploy + monitor + incident orchestrator |
-| `replay_impacted_traffic` | admin | Replay HTTP on stable services after outage |
-| `incident_open` | admin | Open incident with enrichment + Slack/PagerDuty |
-| `incident_get` | reader+ | Fetch incident by ID |
-| `incident_list` | reader+ | List workspace incidents |
-| `incident_update` | admin | Update status and notify Slack |
 
-</details>
+Kubernetes
 
-<details>
-<summary>GitHub</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `github_get_authenticated_user` | reader+ | PAT user identity |
-| `github_list_repositories` | reader+ | List repositories |
-| `github_list_recent_commits` | reader+ | Recent commits across account activity |
-| `github_list_issues` | reader+ | List issues for a repository |
-| `github_list_pull_requests` | reader+ | List pull requests |
-| `github_list_commits` | reader+ | List commits on a branch or path |
-| `github_get_pull_request` | reader+ | Fetch a single pull request |
-| `github_create_branch` | admin | Create a branch |
-| `github_create_or_update_file` | admin | Commit a file change |
-| `github_create_pull_request` | admin | Open a fix PR (kube-memory bot) |
+| Tool                      | Access  | Description                                     |
+| ------------------------- | ------- | ----------------------------------------------- |
+| `k8s_pod_logs`            | reader+ | Read pod logs from connected cluster            |
+| `k8s_get_events`          | reader+ | List cluster or namespace events                |
+| `k8s_get_pod`             | reader+ | Pod status with OOMKilled detection             |
+| `k8s_apply_manifest`      | admin   | Apply YAML manifests                            |
+| `k8s_delete_pod`          | admin   | Delete a pod                                    |
+| `kube_deploy`             | admin   | Full deploy + monitor + incident orchestrator   |
+| `replay_impacted_traffic` | admin   | Replay HTTP on stable services after outage     |
+| `incident_open`           | admin   | Open incident with enrichment + Slack/PagerDuty |
+| `incident_get`            | reader+ | Fetch incident by ID                            |
+| `incident_list`           | reader+ | List workspace incidents                        |
+| `incident_update`         | admin   | Update status and notify Slack                  |
 
-</details>
 
-<details>
-<summary>Slack</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `slack_get_history` | reader+ | Fetch recent channel messages |
-| `slack_get_channel_info` | reader+ | Get channel metadata |
-| `slack_get_replies` | reader+ | Fetch replies for a thread |
-| `slack_list_channels` | reader+ | List channels the bot can access |
-| `slack_list_users` | reader+ | List Slack users visible to the bot |
-| `slack_post_message` | admin | Post a message to a channel |
 
-</details>
+GitHub
 
-<details>
-<summary>PagerDuty</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `pagerduty_list_incidents` | reader+ | List incidents by status/service/time |
-| `pagerduty_get_incident` | reader+ | Fetch incident details |
-| `pagerduty_list_services` | reader+ | List services |
-| `pagerduty_get_incident_log_entries` | reader+ | Fetch incident timeline log entries |
-| `pagerduty_list_incident_notes` | reader+ | List notes on an incident |
-| `pagerduty_list_oncalls` | reader+ | List who is currently on call |
-| `pagerduty_list_users` | reader+ | List PagerDuty users |
+| Tool                            | Access  | Description                            |
+| ------------------------------- | ------- | -------------------------------------- |
+| `github_get_authenticated_user` | reader+ | PAT user identity                      |
+| `github_list_repositories`      | reader+ | List repositories                      |
+| `github_list_recent_commits`    | reader+ | Recent commits across account activity |
+| `github_list_issues`            | reader+ | List issues for a repository           |
+| `github_list_pull_requests`     | reader+ | List pull requests                     |
+| `github_list_commits`           | reader+ | List commits on a branch or path       |
+| `github_get_pull_request`       | reader+ | Fetch a single pull request            |
+| `github_create_branch`          | admin   | Create a branch                        |
+| `github_create_or_update_file`  | admin   | Commit a file change                   |
+| `github_create_pull_request`    | admin   | Open a fix PR (kube-memory bot)        |
 
-</details>
 
-<details>
-<summary>Prometheus</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `prometheus_query` | reader+ | PromQL instant query |
-| `prometheus_query_range` | reader+ | PromQL range query over a time window |
-| `prometheus_list_alerts` | reader+ | List firing alerts |
-| `prometheus_list_targets` | reader+ | List scrape targets and health |
-| `prometheus_list_rules` | reader+ | List alerting and recording rules |
-| `prometheus_list_alertmanagers` | reader+ | List active Alertmanager endpoints |
-| `prometheus_list_labels` | reader+ | List metric label names |
-| `prometheus_list_label_values` | reader+ | List values for a metric label |
 
-</details>
+Slack
 
-<details>
-<summary>ArgoCD</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `argocd_list_applications` | reader+ | List GitOps applications |
-| `argocd_get_application` | reader+ | Application sync/health status |
-| `argocd_get_app_history` | reader+ | Deployment revision history |
-| `argocd_list_app_events` | reader+ | Sync and deploy event timeline |
-| `argocd_get_app_resource_tree` | reader+ | Live resource tree for an app |
-| `argocd_list_projects` | reader+ | List ArgoCD projects |
-| `argocd_list_repositories` | reader+ | List connected Git repositories |
-| `argocd_sync_application` | admin | Trigger a sync |
-| `argocd_rollback_application` | admin | Roll back to a previous revision |
+| Tool                     | Access  | Description                         |
+| ------------------------ | ------- | ----------------------------------- |
+| `slack_get_history`      | reader+ | Fetch recent channel messages       |
+| `slack_get_channel_info` | reader+ | Get channel metadata                |
+| `slack_get_replies`      | reader+ | Fetch replies for a thread          |
+| `slack_list_channels`    | reader+ | List channels the bot can access    |
+| `slack_list_users`       | reader+ | List Slack users visible to the bot |
+| `slack_post_message`     | admin   | Post a message to a channel         |
 
-</details>
 
-<details>
-<summary>Google Cloud</summary>
 
-| Tool | Access | Description |
-|------|--------|-------------|
-| `gcp_list_instances` | reader+ | List Compute Engine VM instances |
-| `gcp_get_instance` | reader+ | Get details for a single Compute Engine VM instance |
-| `gcp_list_storage_buckets` | reader+ | List Cloud Storage buckets |
-| `gcp_get_storage_bucket` | reader+ | Get metadata for a single Cloud Storage bucket |
-| `gcp_list_bucket_objects` | reader+ | List objects stored in a Cloud Storage bucket |
-| `gcp_query_logs` | reader+ | Query Cloud Logging entries |
-| `gcp_list_metric_descriptors` | reader+ | List Cloud Monitoring metric descriptors |
-| `gcp_query_metrics` | reader+ | Query Cloud Monitoring metrics |
 
-</details>
+PagerDuty
+
+
+| Tool                                 | Access  | Description                           |
+| ------------------------------------ | ------- | ------------------------------------- |
+| `pagerduty_list_incidents`           | reader+ | List incidents by status/service/time |
+| `pagerduty_get_incident`             | reader+ | Fetch incident details                |
+| `pagerduty_list_services`            | reader+ | List services                         |
+| `pagerduty_get_incident_log_entries` | reader+ | Fetch incident timeline log entries   |
+| `pagerduty_list_incident_notes`      | reader+ | List notes on an incident             |
+| `pagerduty_list_oncalls`             | reader+ | List who is currently on call         |
+| `pagerduty_list_users`               | reader+ | List PagerDuty users                  |
+
+
+
+
+Prometheus
+
+
+| Tool                            | Access  | Description                           |
+| ------------------------------- | ------- | ------------------------------------- |
+| `prometheus_query`              | reader+ | PromQL instant query                  |
+| `prometheus_query_range`        | reader+ | PromQL range query over a time window |
+| `prometheus_list_alerts`        | reader+ | List firing alerts                    |
+| `prometheus_list_targets`       | reader+ | List scrape targets and health        |
+| `prometheus_list_rules`         | reader+ | List alerting and recording rules     |
+| `prometheus_list_alertmanagers` | reader+ | List active Alertmanager endpoints    |
+| `prometheus_list_labels`        | reader+ | List metric label names               |
+| `prometheus_list_label_values`  | reader+ | List values for a metric label        |
+
+
+
+
+ArgoCD
+
+
+| Tool                           | Access  | Description                      |
+| ------------------------------ | ------- | -------------------------------- |
+| `argocd_list_applications`     | reader+ | List GitOps applications         |
+| `argocd_get_application`       | reader+ | Application sync/health status   |
+| `argocd_get_app_history`       | reader+ | Deployment revision history      |
+| `argocd_list_app_events`       | reader+ | Sync and deploy event timeline   |
+| `argocd_get_app_resource_tree` | reader+ | Live resource tree for an app    |
+| `argocd_list_projects`         | reader+ | List ArgoCD projects             |
+| `argocd_list_repositories`     | reader+ | List connected Git repositories  |
+| `argocd_sync_application`      | admin   | Trigger a sync                   |
+| `argocd_rollback_application`  | admin   | Roll back to a previous revision |
+
+
+
+
+Google Cloud
+
+
+| Tool                          | Access  | Description                                         |
+| ----------------------------- | ------- | --------------------------------------------------- |
+| `gcp_list_instances`          | reader+ | List Compute Engine VM instances                    |
+| `gcp_get_instance`            | reader+ | Get details for a single Compute Engine VM instance |
+| `gcp_list_storage_buckets`    | reader+ | List Cloud Storage buckets                          |
+| `gcp_get_storage_bucket`      | reader+ | Get metadata for a single Cloud Storage bucket      |
+| `gcp_list_bucket_objects`     | reader+ | List objects stored in a Cloud Storage bucket       |
+| `gcp_query_logs`              | reader+ | Query Cloud Logging entries                         |
+| `gcp_list_metric_descriptors` | reader+ | List Cloud Monitoring metric descriptors            |
+| `gcp_query_metrics`           | reader+ | Query Cloud Monitoring metrics                      |
+
+
+
 
 ---
+
+
 
 ## Architecture
 
@@ -400,31 +429,35 @@ flowchart TB
   Loop -.->|"agent workflow"| IDE
 ```
 
+
+
+
+
 ### Credentials & surfaces
 
-| Surface | URL | Credential | Used by |
-|---------|-----|------------|---------|
-| Dashboard | [kube-memory.buildlab.in](https://kube-memory.buildlab.in/) | JWT (session) | Browser after login |
-| MCP | [kube.buildlab.in/mcp](https://kube.buildlab.in/mcp) | `km_*` API key | Cursor, VS Code, Claude Desktop |
-| REST | [kube.buildlab.in](https://kube.buildlab.in/) | `km_*` API key | CI pipelines, scripts, automation |
+
+| Surface   | URL                                                         | Credential     | Used by                           |
+| --------- | ----------------------------------------------------------- | -------------- | --------------------------------- |
+| Dashboard | [kube-memory.buildlab.in](https://kube-memory.buildlab.in/) | JWT (session)  | Browser after login               |
+| MCP       | [kube.buildlab.in/mcp](https://kube.buildlab.in/mcp)        | `km_*` API key | Cursor, VS Code, Claude Desktop   |
+| REST      | [kube.buildlab.in](https://kube.buildlab.in/)               | `km_*` API key | CI pipelines, scripts, automation |
+
 
 API keys are role-scoped: **reader** tools are read-only; **admin** can write memory, post to Slack, sync/rollback ArgoCD, and forget entries.
 
 ---
 
+
+
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [docs/mcp-tools.md](./docs/mcp-tools.md) | MCP tool catalog, workflows, Cursor vs MCP |
-| [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md) | OOM deploy demo script |
-| [docs/setup.md](./docs/setup.md) | Local development setup |
-| [server/API_DOC.md](./server/API_DOC.md) | Complete REST and MCP API reference |
-| [server/.env.example](./server/.env.example) | Server configuration |
-| [PLAN.md](./PLAN.md) | Product vision and roadmap |
 
----
+| Document                                               | Description                                |
+| ------------------------------------------------------ | ------------------------------------------ |
+| [docs/mcp-tools.md](./docs/mcp-tools.md)               | MCP tool catalog, workflows, Cursor vs MCP |
+| [docs/demo-kube-deploy.md](./docs/demo-kube-deploy.md) | OOM deploy demo script                     |
+| [docs/setup.md](./docs/setup.md)                       | Local development setup                    |
+| [server/API_DOC.md](./server/API_DOC.md)               | Complete REST and MCP API reference        |
+| [server/.env.example](./server/.env.example)           | Server configuration                       |
 
-## License
 
-See repository license file.
