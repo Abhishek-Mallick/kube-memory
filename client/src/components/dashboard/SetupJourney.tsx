@@ -11,7 +11,7 @@ export function SetupJourney() {
 
   return (
     <div className="border-b bg-muted/20">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-left md:justify-center gap-2 px-4 py-3 sm:gap-4 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-left md:justify-center gap-2 px-6 py-3 sm:gap-4">
         {steps.map((step, index) => {
           const isCurrent = step.id === currentStep;
           const isLocked = step.locked && !step.done;

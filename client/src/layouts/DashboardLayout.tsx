@@ -33,7 +33,7 @@ export function DashboardLayout() {
   return (
     <div className="dashboard-shell flex min-h-svh flex-col">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-6">
           <div className="flex min-w-0 items-center gap-6">
             <AppLogo className="shrink-0" />
             <nav className="hidden items-center gap-1 sm:flex" aria-label="Dashboard">
@@ -82,7 +82,7 @@ export function DashboardLayout() {
           </div>
         </div>
 
-        <nav className="flex gap-1 overflow-x-auto border-t px-4 py-2 sm:hidden" aria-label="Dashboard mobile">
+        <nav className="flex gap-1 overflow-x-auto border-t px-6 py-2 sm:hidden" aria-label="Dashboard mobile">
           {navItems.map((item) => {
             const active = isNavActive(location.pathname, item.href, item.exact);
             return (
@@ -103,7 +103,7 @@ export function DashboardLayout() {
 
       <SetupJourney />
 
-      <main className="flex-1 px-4 py-6 sm:px-6">
+      <main className="flex-1 py-6">
         <Outlet />
       </main>
     </div>

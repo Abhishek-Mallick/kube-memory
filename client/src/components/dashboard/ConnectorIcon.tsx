@@ -36,7 +36,11 @@ export function ConnectorIcon({ type, className }: ConnectorIconProps) {
       src={src}
       alt=""
       aria-hidden="true"
-      className={cn("size-5 shrink-0 object-contain", className)}
+      className={cn(
+        "size-5 shrink-0 object-contain",
+        (type === "github" || type === "linear") && "dark:invert",
+        className,
+      )}
     />
   );
 }
