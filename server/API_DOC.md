@@ -329,7 +329,7 @@ The client stores the JWT and calls `/auth/me`.
 
 Connector secrets are encrypted at rest. List/upsert responses **never** return decrypted secrets.
 
-Supported types: `kubernetes`, `github`, `slack`, `pagerduty`, `prometheus`, `argocd`, `gcp`
+Supported types: `kubernetes`, `github`, `slack`, `pagerduty`, `prometheus`, `argocd`, `gcp`, `aws`, `azure`, `linear`, `notion`, `jira`, `datadog`, `splunk`
 
 ### `GET /connectors`
 

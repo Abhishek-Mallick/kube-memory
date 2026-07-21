@@ -13,6 +13,11 @@ import { registerNotionTools } from "./tools/notion.js";
 import { registerIncidentTools } from "./tools/incident.js";
 import { registerDeployTools } from "./tools/deploy.js";
 import { registerPlatformTools } from "./tools/platform.js";
+import { registerJiraTools } from "./tools/jira.js";
+import { registerDatadogTools } from "./tools/datadog.js";
+import { registerSplunkTools } from "./tools/splunk.js";
+import { registerAwsTools } from "./tools/aws.js";
+import { registerAzureTools } from "./tools/azure.js";
 
 export function createMcpServer(): McpServer {
   const server = new McpServer(
@@ -36,6 +41,11 @@ export function createMcpServer(): McpServer {
   registerGcpTools(server);
   registerLinearTools(server);
   registerNotionTools(server);
+  registerJiraTools(server);
+  registerDatadogTools(server);
+  registerSplunkTools(server);
+  registerAwsTools(server);
+  registerAzureTools(server);
   registerIncidentTools(server);
   registerDeployTools(server);
 

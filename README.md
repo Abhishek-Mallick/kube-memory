@@ -58,7 +58,7 @@ Connect Cursor, VS Code, Claude Desktop, or any MCP-compatible client to `https:
 Manage everything at [kube-memory.buildlab.in](https://kube-memory.buildlab.in/):
 
 1. **Sign up** — email/password or GitHub OAuth
-2. **Integrations** — connect Kubernetes, GitHub, Slack, PagerDuty, Prometheus, ArgoCD, or Google Cloud (test → save → enable)
+2. **Integrations** — connect Kubernetes, GitHub, Slack, PagerDuty, Prometheus, ArgoCD, Google Cloud, AWS, Azure, Jira/JSM, Datadog, or Splunk (test → save → enable)
 3. **API Keys** — issue `km_*` keys for IDE and automation (requires ≥1 integration)
 4. **IDE setup** — copy the MCP snippet from the API Keys page
 
@@ -205,6 +205,61 @@ Tools are invoked via `POST https://kube.buildlab.in/mcp` with your workspace AP
 | `prometheus_list_alertmanagers` | reader+ | List active Alertmanager endpoints |
 | `prometheus_list_labels` | reader+ | List metric label names |
 | `prometheus_list_label_values` | reader+ | List values for a metric label |
+
+</details>
+
+<details>
+<summary>Jira & Jira Service Management</summary>
+
+| Tool | Access | Description |
+|------|------------|-------------|
+| `jira_search_issues` | reader+ | Search Jira Software and JSM work with bounded JQL results |
+| `jira_get_issue` | reader+ | Fetch an issue, comments, and linked context |
+| `jira_list_service_requests` | reader+ | List requests for a configured service desk |
+
+</details>
+
+<details>
+<summary>Datadog</summary>
+
+| Tool | Access | Description |
+|------|------------|-------------|
+| `datadog_get_service_context` | reader+ | Service ownership/definition and monitor context |
+| `datadog_list_monitors` | reader+ | List monitors matching a bounded query |
+| `datadog_search_evidence` | reader+ | Search logs or traces in a bounded time window |
+
+</details>
+
+<details>
+<summary>Splunk</summary>
+
+| Tool | Access | Description |
+|------|------------|-------------|
+| `splunk_search_logs` | reader+ | Bounded SPL log search (50 records / 5 seconds maximum) |
+| `splunk_list_saved_searches` | reader+ | List saved searches and alert definitions |
+| `splunk_list_fired_alerts` | reader+ | List recent fired alerts for correlation |
+
+</details>
+
+<details>
+<summary>AWS</summary>
+
+| Tool | Access | Description |
+|------|------------|-------------|
+| `aws_get_service_context` | reader+ | Read resources tagged with a service name |
+| `aws_list_alarms` | reader+ | List CloudWatch alarms |
+| `aws_search_logs` | reader+ | Run a bounded CloudWatch Logs Insights query |
+
+</details>
+
+<details>
+<summary>Azure</summary>
+
+| Tool | Access | Description |
+|------|------------|-------------|
+| `azure_get_service_context` | reader+ | Read resources tagged with a service name |
+| `azure_list_alerts` | reader+ | List metric and scheduled query alert rules |
+| `azure_search_logs` | reader+ | Run a bounded KQL query against Log Analytics |
 
 </details>
 

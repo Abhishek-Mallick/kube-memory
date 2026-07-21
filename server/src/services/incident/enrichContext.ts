@@ -4,6 +4,11 @@ import { listEvents, getPodLogs, getPod } from "../kubernetes/client.js";
 import { listCommits, listPullRequests, resolveOwner, isGitHubAvailable } from "../github/client.js";
 import { listAlerts, instantQuery, isPrometheusAvailable } from "../prometheus/client.js";
 import { getApplication, isArgoCDAvailable } from "../argocd/client.js";
+import { searchIssues, isJiraAvailable } from "../jira/client.js";
+import { getServiceContext, isDatadogAvailable } from "../datadog/client.js";
+import { isSplunkAvailable, searchLogs } from "../splunk/client.js";
+import { getServiceContext as getAwsServiceContext, isAwsAvailable, listAlarms as listAwsAlarms } from "../aws/client.js";
+import { getServiceContext as getAzureServiceContext, isAzureAvailable, listAlerts as listAzureAlerts } from "../azure/client.js";
 import { recallMemory } from "../memory/recall.js";
 import { isCogneeConfigured } from "../cognee/client.js";
 import type { IncidentContextSnapshot } from "./types.js";
@@ -132,6 +137,59 @@ async function tryArgoCD(
   }
 }
 
+async function tryJira(workspaceId: string, serviceName: string): Promise<IncidentContextSnapshot["jira"]> {
+  if (!(await isJiraAvailable(workspaceId))) return { error: "Jira connector not configured" };
+  try {
+    return { issues: await searchIssues({ workspaceId, jql: `text ~ \"${serviceName.replace(/"/g, "\\\"")}\" ORDER BY updated DESC`, maxResults: 5 }) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Jira enrichment failed" };
+  }
+}
+
+async function tryDatadog(workspaceId: string, serviceName: string): Promise<IncidentContextSnapshot["datadog"]> {
+  if (!(await isDatadogAvailable(workspaceId))) return { error: "Datadog connector not configured" };
+  try {
+    return { service: await getServiceContext({ workspaceId, service: serviceName }) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Datadog enrichment failed" };
+  }
+}
+
+async function trySplunk(workspaceId: string, serviceName: string): Promise<IncidentContextSnapshot["splunk"]> {
+  if (!(await isSplunkAvailable(workspaceId))) return { error: "Splunk connector not configured" };
+  try {
+    return { logs: await searchLogs({ workspaceId, query: `search \"${serviceName.replace(/"/g, "\\\"")}\" (ERROR OR Exception OR failed)`, earliestTime: "-15m", limit: 10 }) };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Splunk enrichment failed" };
+  }
+}
+
+async function tryAws(workspaceId: string, serviceName: string): Promise<IncidentContextSnapshot["aws"]> {
+  if (!(await isAwsAvailable(workspaceId))) return { error: "AWS connector not configured" };
+  try {
+    const [service, alarms] = await Promise.all([
+      getAwsServiceContext({ workspaceId, service: serviceName }),
+      listAwsAlarms({ workspaceId, state: "ALARM", alarmNamePrefix: serviceName, limit: 10 }),
+    ]);
+    return { service, alarms };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "AWS enrichment failed" };
+  }
+}
+
+async function tryAzure(workspaceId: string, serviceName: string): Promise<IncidentContextSnapshot["azure"]> {
+  if (!(await isAzureAvailable(workspaceId))) return { error: "Azure connector not configured" };
+  try {
+    const [service, alerts] = await Promise.all([
+      getAzureServiceContext({ workspaceId, service: serviceName }),
+      listAzureAlerts({ workspaceId, namePrefix: serviceName, enabled: true, limit: 10 }),
+    ]);
+    return { service, alerts };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Azure enrichment failed" };
+  }
+}
+
 async function tryMemoryRecall(
   datasetName: string,
   serviceName: string,
@@ -193,6 +251,31 @@ export async function enrichIncidentContext(options: {
     if (argo?.error) connectorsSkipped.push("argocd");
     else if (argo?.application) connectorsUsed.push("argocd");
   }
+
+  const jira = await tryJira(options.workspaceId, options.serviceName);
+  context.jira = jira;
+  if (jira?.error) connectorsSkipped.push("jira");
+  else if (jira?.issues) connectorsUsed.push("jira");
+
+  const datadog = await tryDatadog(options.workspaceId, options.serviceName);
+  context.datadog = datadog;
+  if (datadog?.error) connectorsSkipped.push("datadog");
+  else if (datadog?.service) connectorsUsed.push("datadog");
+
+  const splunk = await trySplunk(options.workspaceId, options.serviceName);
+  context.splunk = splunk;
+  if (splunk?.error) connectorsSkipped.push("splunk");
+  else if (splunk?.logs) connectorsUsed.push("splunk");
+
+  const aws = await tryAws(options.workspaceId, options.serviceName);
+  context.aws = aws;
+  if (aws?.error) connectorsSkipped.push("aws");
+  else if (aws?.service || aws?.alarms) connectorsUsed.push("aws");
+
+  const azure = await tryAzure(options.workspaceId, options.serviceName);
+  context.azure = azure;
+  if (azure?.error) connectorsSkipped.push("azure");
+  else if (azure?.service || azure?.alerts) connectorsUsed.push("azure");
 
   const mem = await tryMemoryRecall(options.datasetName, options.serviceName, options.namespace);
   context.memory = mem;

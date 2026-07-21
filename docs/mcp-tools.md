@@ -172,9 +172,49 @@ Deploy and incident workflows do **not** abort when Cognee fails.
 | `k8s_apply_manifest` | admin | Apply YAML (Deployment, Service, Job, …) |
 | `k8s_delete_pod` | admin | Delete a pod |
 
-### GitHub, Slack, PagerDuty, Prometheus, ArgoCD, GCP, Linear, Notion
+### GitHub, Slack, PagerDuty, Prometheus, ArgoCD, GCP, AWS, Azure, Linear, Notion, Jira, Datadog, Splunk
 
 Full per-tool parameters: dashboard **Documentation → MCP tools**, or [server/API_DOC.md](../server/API_DOC.md) / server root HTML index.
+
+### Jira & Jira Service Management
+
+| Tool | Role | Description |
+|------|------|-------------|
+| `jira_search_issues` | reader+ | Bounded JQL search across Jira Software and JSM work |
+| `jira_get_issue` | reader+ | Fetch an issue, comments, and linked context |
+| `jira_list_service_requests` | reader+ | List requests in the configured service desk |
+
+### Datadog
+
+| Tool | Role | Description |
+|------|------|-------------|
+| `datadog_get_service_context` | reader+ | Service definition/ownership and associated monitors |
+| `datadog_list_monitors` | reader+ | Monitor query with bounded results |
+| `datadog_search_evidence` | reader+ | Read-only bounded logs or trace search |
+
+### Splunk
+
+| Tool | Role | Description |
+|------|------|-------------|
+| `splunk_search_logs` | reader+ | Run bounded SPL searches (50 records / 5 seconds maximum) |
+| `splunk_list_saved_searches` | reader+ | List available saved searches and alert definitions |
+| `splunk_list_fired_alerts` | reader+ | List recent fired alerts for incident correlation |
+
+### AWS
+
+| Tool | Role | Description |
+|------|------|-------------|
+| `aws_get_service_context` | reader+ | Read resources matching a service tag |
+| `aws_list_alarms` | reader+ | List bounded CloudWatch alarms |
+| `aws_search_logs` | reader+ | Run a bounded CloudWatch Logs Insights query |
+
+### Azure
+
+| Tool | Role | Description |
+|------|------|-------------|
+| `azure_get_service_context` | reader+ | Read resources tagged with a service name |
+| `azure_list_alerts` | reader+ | List bounded metric and scheduled query alert rules |
+| `azure_search_logs` | reader+ | Run a bounded KQL query against Log Analytics |
 
 ---
 

@@ -113,6 +113,66 @@ export async function testConnector(
         ? { ok: true, message: "Notion connection successful" }
         : { ok: false, message: "Notion authentication failed" };
     }
+    case "jira": {
+      const baseUrl = String(connector.config.baseUrl ?? "").replace(/\/$/, "");
+      if (!baseUrl) return { ok: false, message: "Base URL is required" };
+      const email = String(connector.config.email ?? "").trim();
+      const authorization = email
+        ? `Basic ${Buffer.from(`${email}:${secret}`).toString("base64")}`
+        : `Bearer ${secret}`;
+      const res = await fetch(`${baseUrl}/rest/api/3/myself`, {
+        headers: { Authorization: authorization, Accept: "application/json" },
+      });
+      return res.ok
+        ? { ok: true, message: "Jira connection successful" }
+        : { ok: false, message: "Jira authentication failed" };
+    }
+    case "datadog": {
+      let credentials: { apiKey?: string; appKey?: string };
+      try {
+        credentials = JSON.parse(secret) as { apiKey?: string; appKey?: string };
+      } catch {
+        return { ok: false, message: "Datadog credentials must be JSON with apiKey and appKey" };
+      }
+      if (!credentials.apiKey || !credentials.appKey) {
+        return { ok: false, message: "Datadog credentials must include apiKey and appKey" };
+      }
+      const site = String(connector.config.site ?? "datadoghq.com").trim();
+      const res = await fetch(`https://api.${site}/api/v1/validate`, {
+        headers: { "DD-API-KEY": credentials.apiKey, "DD-APPLICATION-KEY": credentials.appKey },
+      });
+      return res.ok
+        ? { ok: true, message: "Datadog connection successful" }
+        : { ok: false, message: "Datadog authentication failed" };
+    }
+    case "splunk": {
+      const baseUrl = String(connector.config.baseUrl ?? "").replace(/\/$/, "");
+      if (!baseUrl) return { ok: false, message: "Base URL is required" };
+      const res = await fetch(`${baseUrl}/services/authentication/current-context?output_mode=json`, {
+        headers: { Authorization: `Bearer ${secret}` },
+      });
+      return res.ok
+        ? { ok: true, message: "Splunk connection successful" }
+        : { ok: false, message: "Splunk authentication failed" };
+    }
+    case "aws": {
+      try {
+        const { testAwsConnection } = await import("../aws/client.js");
+        await testAwsConnection(workspaceId);
+        return { ok: true, message: "AWS connection successful" };
+      } catch {
+        return { ok: false, message: "AWS authentication failed" };
+      }
+    }
+    case "azure": {
+      try {
+        const { testAzureConnection } = await import("../azure/client.js");
+        await testAzureConnection(workspaceId);
+        return { ok: true, message: "Azure connection successful" };
+      } catch {
+        return { ok: false, message: "Azure authentication failed" };
+      }
+    }
     default:
       return { ok: false, message: "Unsupported connector" };
   }

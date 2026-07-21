@@ -45,6 +45,28 @@ export interface IncidentContextSnapshot {
     application?: unknown;
     error?: string;
   };
+  jira?: {
+    issues?: unknown;
+    error?: string;
+  };
+  datadog?: {
+    service?: unknown;
+    error?: string;
+  };
+  splunk?: {
+    logs?: unknown;
+    error?: string;
+  };
+  aws?: {
+    service?: unknown;
+    alarms?: unknown;
+    error?: string;
+  };
+  azure?: {
+    service?: unknown;
+    alerts?: unknown;
+    error?: string;
+  };
   memory?: {
     similarEpisodes?: unknown;
     error?: string;

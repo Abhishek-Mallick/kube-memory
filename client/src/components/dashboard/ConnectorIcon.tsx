@@ -9,6 +9,8 @@ import prometheusLogo from "@/assets/images/Prometheus.png";
 import slackLogo from "@/assets/images/Slack.png";
 import linearLogo from "@/assets/images/linear.png";
 import notionLogo from "@/assets/images/notion.png";
+import awsLogo from "@/assets/images/aws.webp";
+import azureLogo from "@/assets/images/Azure.png";
 
 interface ConnectorIconProps {
   type: ConnectorType;
@@ -25,6 +27,11 @@ const CONNECTOR_LOGOS: Record<ConnectorType, string> = {
   gcp: googleCloudLogo,
   linear: linearLogo,
   notion: notionLogo,
+  jira: "https://cdn.simpleicons.org/jira/0052CC",
+  datadog: "https://cdn.simpleicons.org/datadog/632CA6",
+  splunk: "https://cdn.simpleicons.org/splunk/65A637",
+  aws: awsLogo,
+  azure: azureLogo,
 };
 
 export function ConnectorIcon({ type, className }: ConnectorIconProps) {

@@ -25,7 +25,7 @@ export async function connectorFetch(
   url: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const { secret } = await requireConnector(workspaceId, type);
+  const { secret, config } = await requireConnector(workspaceId, type);
   const headers = new Headers(init.headers);
 
   switch (type) {
@@ -51,6 +51,33 @@ export async function connectorFetch(
     case "notion":
       headers.set("Authorization", `Bearer ${secret}`);
       headers.set("Notion-Version", "2022-06-28");
+      break;
+    case "jira": {
+      const email = String(config.email ?? "").trim();
+      if (email) {
+        headers.set("Authorization", `Basic ${Buffer.from(`${email}:${secret}`).toString("base64")}`);
+      } else {
+        headers.set("Authorization", `Bearer ${secret}`);
+      }
+      headers.set("Accept", "application/json");
+      break;
+    }
+    case "datadog": {
+      let credentials: { apiKey?: string; appKey?: string };
+      try {
+        credentials = JSON.parse(secret) as { apiKey?: string; appKey?: string };
+      } catch {
+        throw new Error("Datadog credentials must be JSON containing apiKey and appKey");
+      }
+      if (!credentials.apiKey || !credentials.appKey) {
+        throw new Error("Datadog credentials must include apiKey and appKey");
+      }
+      headers.set("DD-API-KEY", credentials.apiKey);
+      headers.set("DD-APPLICATION-KEY", credentials.appKey);
+      break;
+    }
+    case "splunk":
+      headers.set("Authorization", `Bearer ${secret}`);
       break;
     default:
       break;

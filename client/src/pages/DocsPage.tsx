@@ -23,7 +23,7 @@ import type { RootState } from "@/store";
 type ToolGroup = {
   id: string;
   label: string;
-  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd" | "gcp" | "linear" | "notion";
+  connector?: "kubernetes" | "github" | "slack" | "pagerduty" | "prometheus" | "argocd" | "gcp" | "linear" | "notion" | "jira" | "datadog" | "splunk" | "aws" | "azure";
   tools: Array<{ name: string; description: string; params: string; role?: string }>;
 };
 
@@ -447,6 +447,56 @@ const toolGroups: ToolGroup[] = [
     ],
   },
   {
+    id: "jira",
+    label: "Jira & JSM",
+    connector: "jira",
+    tools: [
+      { name: "jira_search_issues", description: "Search Jira Software or JSM work using bounded JQL.", params: "jql (required), maxResults (1–50)" },
+      { name: "jira_get_issue", description: "Fetch an issue with comments and linked context.", params: "issueKey (required)" },
+      { name: "jira_list_service_requests", description: "List requests from a Jira Service Management desk.", params: "serviceDeskId, limit (1–50)" },
+    ],
+  },
+  {
+    id: "datadog",
+    label: "Datadog",
+    connector: "datadog",
+    tools: [
+      { name: "datadog_get_service_context", description: "Read service ownership/definition and associated monitors.", params: "service (required)" },
+      { name: "datadog_list_monitors", description: "List monitors matching an optional query.", params: "query, limit (1–50)" },
+      { name: "datadog_search_evidence", description: "Search a bounded time window of logs or traces.", params: "type (logs|traces), query, from, to, limit (1–50)" },
+    ],
+  },
+  {
+    id: "splunk",
+    label: "Splunk",
+    connector: "splunk",
+    tools: [
+      { name: "splunk_search_logs", description: "Run a bounded SPL search and return up to 50 records.", params: "query (required), earliestTime, latestTime, limit (1–50)" },
+      { name: "splunk_list_saved_searches", description: "List saved searches and alert definitions.", params: "count (1–50)" },
+      { name: "splunk_list_fired_alerts", description: "List recent fired alerts for incident correlation.", params: "count (1–50)" },
+    ],
+  },
+  {
+    id: "aws",
+    label: "AWS",
+    connector: "aws",
+    tools: [
+      { name: "aws_get_service_context", description: "Find resources tagged with a service name.", params: "service (required), region" },
+      { name: "aws_list_alarms", description: "List bounded CloudWatch alarms.", params: "state, alarmNamePrefix, region, limit (1–50)" },
+      { name: "aws_search_logs", description: "Run a bounded CloudWatch Logs Insights query.", params: "logGroupNames, query, startTime, endTime, region, limit (1–50)" },
+    ],
+  },
+  {
+    id: "azure",
+    label: "Azure",
+    connector: "azure",
+    tools: [
+      { name: "azure_get_service_context", description: "Find resources tagged with a service name.", params: "service (required)" },
+      { name: "azure_list_alerts", description: "List bounded metric and scheduled query alert rules.", params: "namePrefix, enabled, limit (1–50)" },
+      { name: "azure_search_logs", description: "Run a bounded KQL query against Log Analytics.", params: "query, startTime, endTime, workspaceId, limit (1–50)" },
+    ],
+  },
+  {
     id: "deploy",
     label: "Deploy & incidents",
     connector: "kubernetes",
@@ -468,7 +518,7 @@ const toolGroups: ToolGroup[] = [
       {
         name: "incident_open",
         description:
-          "Open incident: enrich from K8s/GitHub/Prometheus/ArgoCD, classify, persist, Slack/PagerDuty, optional memory.",
+          "Open incident: enrich from K8s/GitHub/Prometheus/ArgoCD/Jira/Datadog/Splunk/AWS/Azure, classify, persist, Slack/PagerDuty, optional memory.",
         params:
           "serviceName (required), namespace, podName, severity, githubOwner, githubRepo, notifySlack, slackChannel, triggerPagerDuty, rememberInMemory, impactedServices[]",
         role: "admin",
@@ -660,16 +710,91 @@ const connectorSetup = [
     dashboardFields: "Integration token (secret, required), Default database ID (optional)",
     demoPrompt: "Search Notion for the payment-service runbook — what are the rollback steps?",
   },
+  {
+    type: "jira" as const,
+    title: "Jira & Jira Service Management",
+    credential: "Atlassian site URL + API token/PAT",
+    tools: "jira_search_issues, jira_get_issue, jira_list_service_requests",
+    priority: "Recommended — enterprise incident and change context",
+    webhook: false,
+    steps: [
+      "For Jira Cloud, create an Atlassian API token and use the account email that owns it; grant the account browse access to the required projects and service desk.",
+      "For Jira Data Center, leave email empty and use a personal access token supported by your installation.",
+      "Dashboard → Integrations → Jira & JSM → enter the site URL, email if applicable, optional default service desk ID, and token → Test → Save → Enable.",
+      "Use jira_search_issues to retrieve linked change, incident, and postmortem context during triage.",
+    ],
+    dashboardFields: "Atlassian site URL, account email (Cloud), default service desk ID (optional), API token/PAT (secret)",
+    demoPrompt: "Search Jira for recent issues mentioning payment-service and show the linked incident context.",
+  },
+  {
+    type: "datadog" as const,
+    title: "Datadog",
+    credential: "API key + application key stored as one encrypted JSON secret",
+    tools: "datadog_get_service_context, datadog_list_monitors, datadog_search_evidence",
+    priority: "Recommended — correlated logs, traces, monitors, and ownership",
+    webhook: false,
+    steps: [
+      "Create a dedicated, read-only service account with an API key and an application key limited to monitor, logs, APM read, and service-definition read scopes.",
+      "Dashboard → Integrations → Datadog → enter site (for example datadoghq.com) and credentials JSON: {\"apiKey\":\"…\",\"appKey\":\"…\"} → Test → Save → Enable.",
+      "Use short, explicit time windows in datadog_search_evidence; the connector limits every request to 50 records and does not expose write actions.",
+    ],
+    dashboardFields: "Datadog site (optional), credentials JSON (encrypted secret, required)",
+    demoPrompt: "Show Datadog monitors for payment-service, then search logs from the last 15 minutes for errors.",
+  },
+  {
+    type: "splunk" as const,
+    title: "Splunk",
+    credential: "Splunk management URL + dedicated bearer token",
+    tools: "splunk_search_logs, splunk_list_saved_searches, splunk_list_fired_alerts",
+    priority: "Recommended — enterprise log analysis and alert correlation",
+    webhook: false,
+    steps: [
+      "Create a dedicated Splunk role with read-only search access to only the required indexes; do not use an administrator token.",
+      "Create a bearer token for that account and ensure the Splunk management port is reachable by kube-memory.",
+      "Dashboard → Integrations → Splunk → enter the management URL (typically https://host:8089) and bearer token → Test → Save → Enable.",
+      "Use explicit index and time filters in SPL. kube-memory waits up to five seconds and returns no more than 50 records per search.",
+    ],
+    dashboardFields: "Splunk management URL (required), bearer token (encrypted secret, required)",
+    demoPrompt: "Search Splunk for payment-service errors in the last 15 minutes, then list fired alerts.",
+  },
+  {
+    type: "aws" as const,
+    title: "AWS",
+    credential: "Temporary AWS credentials + optional read-only role ARN",
+    tools: "aws_get_service_context, aws_list_alarms, aws_search_logs",
+    priority: "Recommended — CloudWatch diagnostics and tagged resource context",
+    webhook: false,
+    steps: [
+      "Create a dedicated read-only IAM role scoped to CloudWatch Logs Insights, CloudWatch DescribeAlarms, Resource Groups Tagging API GetResources, and STS GetCallerIdentity.",
+      "Create short-lived credentials with permission to assume that role, then enter JSON credentials and the optional role ARN in the dashboard.",
+      "Configure a default region, test the connection, save, and enable. Do not use long-lived administrator keys.",
+    ],
+    dashboardFields: "Default region, read-only role ARN (optional), temporary credentials JSON (encrypted secret)",
+    demoPrompt: "List AWS alarms for payment-service and search its CloudWatch log group for errors in the last 15 minutes.",
+  },
+  {
+    type: "azure" as const,
+    title: "Azure",
+    credential: "Read-only service principal stored as encrypted JSON",
+    tools: "azure_get_service_context, azure_list_alerts, azure_search_logs",
+    priority: "Recommended — Log Analytics diagnostics and tagged resource context",
+    webhook: false,
+    steps: [
+      "Create a dedicated read-only app registration and service principal with Reader plus Log Analytics Reader and Monitoring Reader on the target subscription.",
+      "Grant access to the Log Analytics workspace you want to query and tag resources with a service key for context lookups.",
+      "Dashboard → Integrations → Azure → enter subscription ID, optional Log Analytics workspace ID, and service principal JSON → Test → Save → Enable.",
+      "Use explicit KQL time filters in azure_search_logs; every query is capped at 50 rows and five seconds.",
+    ],
+    dashboardFields: "Subscription ID (required), Log Analytics workspace ID (optional default), service principal JSON (encrypted secret)",
+    demoPrompt: "List Azure alerts for payment-service and search Log Analytics for errors in the last 15 minutes.",
+  },
 ];
 
 const futureConnectors = [
   { name: "Grafana", why: "Dashboard links and alert annotations alongside Prometheus metrics" },
   { name: "Loki / Elasticsearch", why: "Cluster-wide log search beyond single-pod tail" },
   { name: "Helm", why: "Chart revision diffing for deploy forensics" },
-  { name: "Jira", why: "Link incidents to tickets and sprint context" },
   { name: "Sentry", why: "App errors tied to deploy episodes" },
-  { name: "Datadog / New Relic", why: "APM traces for post-deploy regressions" },
-  { name: "Cloud APIs (AWS/Azure)", why: "Node pool and managed service state during infra incidents" },
   { name: "Webhook ingest", why: "Push Alertmanager/PagerDuty events → auto memory_remember" },
 ];
 

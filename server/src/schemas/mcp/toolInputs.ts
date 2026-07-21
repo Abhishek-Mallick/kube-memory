@@ -316,6 +316,87 @@ export const replayImpactedTrafficInputSchema = z.object({
     .optional(),
 });
 
+export const jiraSearchIssuesInputSchema = z.object({
+  jql: z.string().min(1),
+  maxResults: z.number().int().min(1).max(50).default(25),
+});
+
+export const jiraGetIssueInputSchema = z.object({
+  issueKey: z.string().min(1),
+});
+
+export const jiraListServiceRequestsInputSchema = z.object({
+  serviceDeskId: z.string().min(1).optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export const datadogGetServiceContextInputSchema = z.object({
+  service: z.string().min(1),
+});
+
+export const datadogListMonitorsInputSchema = z.object({
+  query: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export const datadogSearchEvidenceInputSchema = z.object({
+  type: z.enum(["logs", "traces"]),
+  query: z.string().min(1),
+  from: z.string().min(1),
+  to: z.string().min(1),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export const splunkSearchLogsInputSchema = z.object({
+  query: z.string().min(1),
+  earliestTime: z.string().optional(),
+  latestTime: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export const splunkListSavedSearchesInputSchema = z.object({
+  count: z.number().int().min(1).max(50).default(25),
+});
+
+export const splunkListFiredAlertsInputSchema = z.object({
+  count: z.number().int().min(1).max(50).default(25),
+});
+
+export const awsGetServiceContextInputSchema = z.object({
+  service: z.string().min(1),
+  region: z.string().optional(),
+});
+export const awsListAlarmsInputSchema = z.object({
+  state: z.enum(["OK", "ALARM", "INSUFFICIENT_DATA"]).optional(),
+  alarmNamePrefix: z.string().optional(),
+  region: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+export const awsSearchLogsInputSchema = z.object({
+  logGroupNames: z.array(z.string().min(1)).min(1).max(10),
+  query: z.string().min(1),
+  startTime: z.string().min(1),
+  endTime: z.string().min(1),
+  region: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
+export const azureGetServiceContextInputSchema = z.object({
+  service: z.string().min(1),
+});
+export const azureListAlertsInputSchema = z.object({
+  namePrefix: z.string().optional(),
+  enabled: z.boolean().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+export const azureSearchLogsInputSchema = z.object({
+  query: z.string().min(1),
+  startTime: z.string().min(1),
+  endTime: z.string().min(1),
+  workspaceId: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(25),
+});
+
 export const gcpListInstancesInputSchema = z.object({
   project: z.string().optional(),
   zone: z.string().optional(),

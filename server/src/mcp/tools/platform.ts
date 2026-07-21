@@ -50,6 +50,21 @@ export function registerPlatformTools(server: McpServer): void {
           gcp: integrations.gcp?.enabled
             ? "Use gcp_list_instances and gcp_get_instance for Compute Engine VMs."
             : "Connect Google Cloud in the kube-memory dashboard.",
+          jira: integrations.jira?.enabled
+            ? "Use jira_search_issues for linked incident and change context."
+            : "Connect Jira & JSM in the kube-memory dashboard.",
+          datadog: integrations.datadog?.enabled
+            ? "Use datadog_get_service_context and datadog_search_evidence for observability evidence."
+            : "Connect Datadog in the kube-memory dashboard.",
+          splunk: integrations.splunk?.enabled
+            ? "Use splunk_search_logs for bounded SPL log analysis and splunk_list_fired_alerts for correlation."
+            : "Connect Splunk in the kube-memory dashboard.",
+          aws: integrations.aws?.enabled
+            ? "Use aws_get_service_context, aws_list_alarms, and aws_search_logs for cloud evidence."
+            : "Connect AWS in the kube-memory dashboard.",
+          azure: integrations.azure?.enabled
+            ? "Use azure_get_service_context, azure_list_alerts, and azure_search_logs for cloud evidence."
+            : "Connect Azure in the kube-memory dashboard.",
         },
         instructions: MCP_SERVER_INSTRUCTIONS,
       });

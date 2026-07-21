@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { InformationCircleIcon, Plug01Icon } from "@hugeicons/core-free-icons";
+import { InformationCircleIcon, Plug01Icon, SearchIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -206,6 +207,65 @@ const CONNECTORS: ConnectorMeta[] = [
       { key: "defaultDatabaseId", label: "Default database ID", type: "text", placeholder: "database-uuid" },
     ],
   },
+  {
+    type: "jira",
+    title: "Jira & JSM",
+    description: "Search engineering issues and inspect Jira Service Management requests during incident triage.",
+    docsLink: "/docs?tab=connectors&connector=jira",
+    tools: ["jira_search_issues", "jira_get_issue", "jira_list_service_requests"],
+    fields: [
+      { key: "baseUrl", label: "Atlassian site URL", type: "text", placeholder: "https://your-team.atlassian.net", required: true },
+      { key: "email", label: "Account email (Cloud)", type: "text", placeholder: "devops@example.com" },
+      { key: "serviceDeskId", label: "Default service desk ID", type: "text", placeholder: "1" },
+      { key: "secret", label: "API token or PAT", type: "secret", required: true },
+    ],
+  },
+  {
+    type: "datadog",
+    title: "Datadog",
+    description: "Read service ownership, monitors, logs, and traces for deployment and incident evidence.",
+    docsLink: "/docs?tab=connectors&connector=datadog",
+    tools: ["datadog_get_service_context", "datadog_list_monitors", "datadog_search_evidence"],
+    fields: [
+      { key: "site", label: "Datadog site", type: "text", placeholder: "datadoghq.com" },
+      { key: "secret", label: "Credentials JSON", type: "textarea", placeholder: '{"apiKey":"…","appKey":"…"}', required: true },
+    ],
+  },
+  {
+    type: "splunk",
+    title: "Splunk",
+    description: "Run bounded SPL searches and inspect saved searches and fired alerts for incident evidence.",
+    docsLink: "/docs?tab=connectors&connector=splunk",
+    tools: ["splunk_search_logs", "splunk_list_saved_searches", "splunk_list_fired_alerts"],
+    fields: [
+      { key: "baseUrl", label: "Splunk management URL", type: "text", placeholder: "https://splunk.example.com:8089", required: true },
+      { key: "secret", label: "Bearer token", type: "secret", required: true },
+    ],
+  },
+  {
+    type: "aws",
+    title: "AWS",
+    description: "Read CloudWatch logs and alarms plus service-tagged resource context through short-lived credentials.",
+    docsLink: "/docs?tab=connectors&connector=aws",
+    tools: ["aws_get_service_context", "aws_list_alarms", "aws_search_logs"],
+    fields: [
+      { key: "region", label: "Default region", type: "text", placeholder: "us-east-1", required: true },
+      { key: "roleArn", label: "Read-only role ARN", type: "text", placeholder: "arn:aws:iam::123456789012:role/kube-memory-readonly" },
+      { key: "secret", label: "Temporary credentials JSON", type: "textarea", placeholder: '{"accessKeyId":"…","secretAccessKey":"…","sessionToken":"…"}', required: true },
+    ],
+  },
+  {
+    type: "azure",
+    title: "Azure",
+    description: "Read Log Analytics, Monitor alerts, and service-tagged resource context through a read-only service principal.",
+    docsLink: "/docs?tab=connectors&connector=azure",
+    tools: ["azure_get_service_context", "azure_list_alerts", "azure_search_logs"],
+    fields: [
+      { key: "subscriptionId", label: "Subscription ID", type: "text", placeholder: "00000000-0000-0000-0000-000000000000", required: true },
+      { key: "logAnalyticsWorkspaceId", label: "Log Analytics workspace ID", type: "text", placeholder: "00000000-0000-0000-0000-000000000000" },
+      { key: "secret", label: "Service principal JSON", type: "textarea", placeholder: '{"tenantId":"…","clientId":"…","clientSecret":"…"}', required: true },
+    ],
+  },
 ];
 
 type DialogPhase = "credentials" | "post-save";
@@ -274,10 +334,23 @@ export function ConnectorsPage() {
   const [config, setConfig] = useState<Record<string, string>>({});
   const [secret, setSecret] = useState("");
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [connectorSearch, setConnectorSearch] = useState("");
 
   const configuredCount = data
     ? Object.values(data.connectors).filter((c) => c.configured).length
     : 0;
+
+  const visibleConnectors = CONNECTORS.filter((connector) => {
+    const pattern = connectorSearch.trim();
+    if (!pattern) return true;
+    try {
+      const matcher = new RegExp(pattern, "i");
+      return matcher.test(connector.title) || matcher.test(connector.description);
+    } catch {
+      return connector.title.toLowerCase().includes(pattern.toLowerCase())
+        || connector.description.toLowerCase().includes(pattern.toLowerCase());
+    }
+  });
 
   useEffect(() => {
     const gcpStatus = searchParams.get("gcp");
@@ -430,23 +503,36 @@ export function ConnectorsPage() {
         title="Integrations"
         description="Connect at least one integration before creating an API key. Test credentials, save, then enable when you are ready."
         action={
-          configuredCount > 0 ? (
-            <StatusBadge status="active" label={`${configuredCount} connected`} />
-          ) : (
-            <StatusBadge status="warning" label="Step 1 — connect an app" />
-          )
+          <div className="flex w-full flex-col items-end gap-4 sm:w-80">
+            {configuredCount > 0 ? (
+              <StatusBadge status="active" label={`${configuredCount} connected`} />
+            ) : (
+              <StatusBadge status="warning" label="Step 1 — connect an app" />
+            )}
+            <InputGroup className="h-10 w-full">
+              <InputGroupAddon>
+                <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                value={connectorSearch}
+                onChange={(event) => setConnectorSearch(event.target.value)}
+                placeholder="Search integrations…"
+                aria-label="Search integrations"
+              />
+            </InputGroup>
+          </div>
         }
       />
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
+          {Array.from({ length: CONNECTORS.length }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CONNECTORS.map((meta) => {
+          {visibleConnectors.map((meta) => {
             const summary = data?.connectors[meta.type];
             const status = connectorStatus(summary);
             return (
@@ -492,6 +578,15 @@ export function ConnectorsPage() {
             );
           })}
         </div>
+      )}
+
+      {!isLoading && visibleConnectors.length === 0 && (
+        <Empty className="border bg-card">
+          <EmptyHeader>
+            <EmptyTitle>No integrations found</EmptyTitle>
+            <EmptyDescription>Try a connector name or a word from its description.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
 
       {!isLoading && configuredCount === 0 && (

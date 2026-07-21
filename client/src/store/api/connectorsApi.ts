@@ -9,7 +9,12 @@ export type ConnectorType =
   | "argocd"
   | "gcp"
   | "linear"
-  | "notion";
+  | "notion"
+  | "jira"
+  | "datadog"
+  | "splunk"
+  | "aws"
+  | "azure";
 
 export interface ConnectorSummary {
   type: ConnectorType;

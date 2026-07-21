@@ -10,6 +10,11 @@ export const connectorTypes = [
   "gcp",
   "linear",
   "notion",
+  "jira",
+  "datadog",
+  "splunk",
+  "aws",
+  "azure",
 ] as const;
 
 export type ConnectorType = (typeof connectorTypes)[number];

@@ -21,7 +21,7 @@ export function registerIncidentTools(server: McpServer): void {
     {
       title: "Open Operational Incident",
       description:
-        "End-to-end incident workflow: enrich from Kubernetes, GitHub, Prometheus, and ArgoCD; " +
+        "End-to-end incident workflow: enrich from Kubernetes, GitHub, Prometheus, ArgoCD, Jira, Datadog, Splunk, AWS, and Azure; " +
         "classify root cause; persist incident record; store memory episode; optionally trigger PagerDuty and post to Slack.",
       inputSchema: {
         serviceName: z.string(),
