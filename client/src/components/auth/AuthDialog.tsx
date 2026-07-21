@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import githublogo from "@/assets/images/GitHub.png"
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDialogProps) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState(defaultTab);
   const [login, { isLoading: loginLoading, error: loginError }] = useLoginMutation();
   const [register, { isLoading: registerLoading, error: registerError }] = useRegisterMutation();
@@ -43,6 +45,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       password: String(form.get("password")),
     }).unwrap();
     onOpenChange(false);
+    navigate("/dashboard", { replace: true });
   }
 
   async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
@@ -54,6 +57,7 @@ export function AuthDialog({ open, onOpenChange, defaultTab = "login" }: AuthDia
       password: String(form.get("password")),
     }).unwrap();
     onOpenChange(false);
+    navigate("/dashboard", { replace: true });
   }
 
   const error = loginError ?? registerError;
